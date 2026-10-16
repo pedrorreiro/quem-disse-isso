@@ -1,5 +1,24 @@
 import { rpc } from "./api";
 
+async function post(path: string, body: unknown = {}) {
+  const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const out = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok || out.error) throw new Error(out.error ?? `Erro ${res.status}`);
+}
+
+export async function me(): Promise<{ id: string; is_anonymous: boolean } | null> {
+  const res = await fetch("/api/auth/me", { cache: "no-store" });
+  const out = (await res.json().catch(() => ({}))) as { user?: { id: string; is_anonymous: boolean } | null; error?: string };
+  if (!res.ok) throw new Error(out.error ?? `Erro ${res.status}`);
+  return out.user ?? null;
+}
+
+export const sendOtp = (email: string) => post("/api/auth/otp", { email });
+export const verifyOtp = (email: string, code: string) => post("/api/auth/verify", { email, code });
+export const adoptSession = (access_token: string, refresh_token: string) =>
+  post("/api/auth/session", { access_token, refresh_token });
+export const logout = () => post("/api/auth/logout");
+
 export type PhotoStatus = "pending" | "approved" | "rejected";
 
 export type Person = {

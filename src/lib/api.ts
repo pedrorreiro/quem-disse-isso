@@ -1,17 +1,25 @@
-import { ensureSession, getSupabase } from "./supabase";
 import type { Challenge, GameMode, JokerName, Jokers, Reveal, Round, Summary } from "./types";
 
-export async function rpc<T>(fn: string, args?: Record<string, unknown>): Promise<T> {
-  const { data, error } = await getSupabase().rpc(fn, args);
-  if (error) throw new Error(error.message);
-  return data as T;
+/** Tudo passa pelo servidor do Next (/api/*): o navegador não fala com o Supabase. */
+async function call<T>(path: string, init?: RequestInit): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(path, { ...init, headers: { "Content-Type": "application/json" }, cache: "no-store" });
+  } catch {
+    throw new Error("Sem conexão. Tente de novo.");
+  }
+  const body = (await res.json().catch(() => ({}))) as { data?: T; error?: string };
+  if (!res.ok || body.error) throw new Error(body.error ?? `Erro ${res.status}`);
+  return body.data as T;
 }
+
+export const rpc = <T>(fn: string, args?: Record<string, unknown>) =>
+  call<T>(`/api/rpc/${fn}`, { method: "POST", body: JSON.stringify(args ?? {}) });
 
 export async function startGame(
   mode: GameMode,
   opts: { category?: string; quoteId?: string; challengeId?: string } = {},
 ) {
-  await ensureSession();
   if (mode === "challenge") return rpc<string>("start_challenge", { p_challenge_id: opts.challengeId });
   return rpc<string>("start_game", {
     p_mode: mode,
@@ -37,11 +45,7 @@ export const createChallenge = (sessionId: string, name?: string | null) =>
 
 export const getChallenge = (id: string) => rpc<Challenge | null>("get_challenge", { p_challenge_id: id });
 
-export async function listCategories(): Promise<string[]> {
-  const { data, error } = await getSupabase().from("people").select("category");
-  if (error) throw new Error(error.message);
-  return [...new Set((data ?? []).map((r) => r.category as string))].sort();
-}
+export const listCategories = () => call<string[]>("/api/categories");
 
 const ERRORS: Record<string, string> = {
   no_quotes: "Ainda não há frases suficientes para jogar.",

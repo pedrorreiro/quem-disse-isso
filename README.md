@@ -2,15 +2,16 @@
 
 Aparece uma frase de uma pessoa famosa; o jogador escolhe, entre 4 cartas (foto + nome), quem a disse. Toda frase tem fonte real clicável.
 
-Next.js (App Router, mobile-first) + Supabase (Postgres, Auth anônimo, RPCs). Plano completo: [`../PLANO.md`](../PLANO.md).
+Next.js (App Router, mobile-first) + Supabase (Postgres, Auth anônimo, RPCs). O navegador só fala com o Next (`/api/*`); o Supabase é chamado apenas no servidor. Plano completo: [`../PLANO.md`](../PLANO.md).
 
 ## Rodando
 
 1. **Supabase** — local (`supabase start`, aplica `supabase/migrations` e `supabase/seed.sql`) ou um projeto na nuvem:
    - rode as migrations em ordem (`supabase/migrations/*.sql`) e depois `supabase/seed.sql`;
    - em **Authentication → Sign In / Providers**, ative **Allow anonymous sign-ins** (jogadores) e o login por **e-mail** (admin);
-   - em **Authentication → URL Configuration**, adicione `http://localhost:3000/admin` (e a URL de produção) nas Redirect URLs.
-2. `cp .env.example .env.local` e preencha `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+   - em **Authentication → URL Configuration**, adicione `http://localhost:3000/admin` (e a URL de produção) nas Redirect URLs;
+   - em **Authentication → Rate Limits**, aumente o limite de cadastros anônimos: as sessões são criadas pelo servidor, então muitos jogadores podem chegar do mesmo IP.
+2. `cp .env.example .env.local` e preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY` (só o servidor lê).
 3. `npm install && npm run dev` → http://localhost:3000
 
 ## Como funciona
@@ -44,7 +45,9 @@ O jogo só usa frases `verified` **de pessoas com foto aprovada**. Um trigger im
 - As 3 opções erradas vêm da mesma **área** (futebol, música…), do mesmo **gênero** e do mesmo lado (brasileiro x gringo) de quem disse. Área e gênero ficam editáveis em /admin → Pessoas.
 
 ### Segurança
-O cliente **não lê** `quotes` nem `game_rounds` (RLS sem policies). Tudo passa por funções `SECURITY DEFINER` (`start_game`, `next_round`, `answer_round`, `use_joker`, `eliminate_option`, `get_session_summary`, `get_quote_preview`, `create_challenge`, `get_challenge`, `start_challenge`) que não revelam a resposta antes de ela ser enviada e medem o tempo no servidor. Funções internas (`_pick_options`, …) não são executáveis pelo cliente.
+O navegador não conhece a URL nem a chave do Supabase. Ele chama `/api/rpc/<função>` (lista fechada de funções), `/api/categories` e `/api/auth/*`; o servidor do Next repassa ao Supabase. A sessão (anônima para jogadores, por e-mail para o admin) fica em cookies `httpOnly`, renovada no servidor.
+
+No banco, o cliente **não lê** `quotes` nem `game_rounds` (RLS sem policies). Tudo passa por funções `SECURITY DEFINER` (`start_game`, `next_round`, `answer_round`, `use_joker`, `eliminate_option`, `get_session_summary`, `get_quote_preview`, `create_challenge`, `get_challenge`, `start_challenge`) que não revelam a resposta antes de ela ser enviada e medem o tempo no servidor. Funções internas (`_pick_options`, …) não são executáveis pelo cliente.
 
 ## Dados de exemplo
 

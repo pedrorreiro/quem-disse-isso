@@ -1,17 +1,17 @@
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAs } from "./server/supabase";
 import type { Challenge } from "./types";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** RPC pública chamada no servidor, sem sessão de jogador (metadados, imagens). */
 async function publicRpc<T>(fn: string, args: Record<string, unknown>): Promise<T | null> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
-  const supabase = createClient(url, key, { auth: { persistSession: false } });
-  const { data, error } = await supabase.rpc(fn, args);
-  if (error || !data) return null;
-  return data as T;
+  try {
+    const { data, error } = await supabaseAs().rpc(fn, args);
+    if (error || !data) return null;
+    return data as T;
+  } catch {
+    return null;
+  }
 }
 
 /** Texto público de uma frase (nunca o autor). Usado em metadados e imagem OG, no servidor. */

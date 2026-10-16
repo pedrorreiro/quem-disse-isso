@@ -2,10 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import type { Session } from "@supabase/supabase-js";
-import { adminOverview, isAdmin, type Overview } from "@/lib/admin";
+import { adminOverview, adoptSession, isAdmin, logout, me, sendOtp, verifyOtp, type Overview } from "@/lib/admin";
 import { friendlyError } from "@/lib/api";
-import { getSupabase } from "@/lib/supabase";
 import NewQuote from "./NewQuote";
 import PeopleAdmin from "./PeopleAdmin";
 import QuoteReview from "./QuoteReview";
@@ -18,33 +16,33 @@ export default function AdminApp() {
   const [auth, setAuth] = useState<Auth>({ state: "loading" });
   const [error, setError] = useState("");
 
-  const check = useCallback(async (session: Session | null) => {
-    if (!session || session.user.is_anonymous) return setAuth({ state: "login" });
+  const check = useCallback(async () => {
     try {
-      setAuth((await isAdmin()) ? { state: "ok" } : { state: "denied", userId: session.user.id });
+      const user = await me();
+      if (!user || user.is_anonymous) return setAuth({ state: "login" });
+      setAuth((await isAdmin()) ? { state: "ok" } : { state: "denied", userId: user.id });
     } catch (e) {
       setError(friendlyError(e));
     }
   }, []);
 
+  const signOut = useCallback(() => {
+    logout().finally(() => void check());
+  }, [check]);
+
   useEffect(() => {
-    let supabase;
-    try {
-      supabase = getSupabase();
-    } catch (e) {
-      queueMicrotask(() => setError(friendlyError(e)));
-      return;
-    }
-    supabase.auth.getSession().then(({ data }) => check(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      setTimeout(() => void check(session), 0); // fora do callback do auth, como recomenda o supabase-js
-    });
-    return () => data.subscription.unsubscribe();
+    // link mágico: os tokens chegam no #hash; viram cookie no servidor e saem da URL
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    const at = hash.get("access_token");
+    const rt = hash.get("refresh_token");
+    if (at && rt) history.replaceState(null, "", window.location.pathname);
+    const adopted = at && rt ? adoptSession(at, rt).catch(() => {}) : Promise.resolve();
+    adopted.then(() => check());
   }, [check]);
 
   if (error) return <Centered><p className="text-rose-300">{error}</p></Centered>;
   if (auth.state === "loading") return <Centered><p className="animate-pulse text-white/50">Carregando…</p></Centered>;
-  if (auth.state === "login") return <Centered><Login /></Centered>;
+  if (auth.state === "login") return <Centered><Login onDone={() => void check()} /></Centered>;
   if (auth.state === "denied") {
     return (
       <Centered>
@@ -54,21 +52,21 @@ export default function AdminApp() {
           <pre className="overflow-x-auto rounded-lg bg-white/5 p-3 text-sm">
             insert into public.admins (user_id) values (&apos;{auth.userId}&apos;);
           </pre>
-          <button type="button" className={btnGhost} onClick={() => void getSupabase().auth.signOut()}>
+          <button type="button" className={btnGhost} onClick={signOut}>
             Sair
           </button>
         </div>
       </Centered>
     );
   }
-  return <Dashboard />;
+  return <Dashboard onSignOut={signOut} />;
 }
 
 function Centered({ children }: { children: React.ReactNode }) {
   return <div className="flex min-h-dvh items-center justify-center p-4">{children}</div>;
 }
 
-function Login() {
+function Login({ onDone }: { onDone: () => void }) {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
@@ -76,18 +74,22 @@ function Login() {
 
   async function send() {
     setMsg("");
-    const { error } = await getSupabase().auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/admin` },
-    });
-    if (error) setMsg(error.message);
-    else setSent(true);
+    try {
+      await sendOtp(email);
+      setSent(true);
+    } catch (e) {
+      setMsg(friendlyError(e));
+    }
   }
 
   async function verify() {
     setMsg("");
-    const { error } = await getSupabase().auth.verifyOtp({ email, token: code.trim(), type: "email" });
-    if (error) setMsg(error.message);
+    try {
+      await verifyOtp(email, code);
+      onDone();
+    } catch (e) {
+      setMsg(friendlyError(e));
+    }
   }
 
   return (
@@ -129,7 +131,7 @@ function Login() {
   );
 }
 
-function Dashboard() {
+function Dashboard({ onSignOut }: { onSignOut: () => void }) {
   const [tab, setTab] = useState<Tab>("quotes");
   const [overview, setOverview] = useState<Overview | null>(null);
 
@@ -162,7 +164,7 @@ function Dashboard() {
           <Link href="/" className={btnGhost}>
             Ver o jogo
           </Link>
-          <button type="button" className={btnGhost} onClick={() => void getSupabase().auth.signOut()}>
+          <button type="button" className={btnGhost} onClick={onSignOut}>
             Sair
           </button>
         </div>
