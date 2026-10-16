@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { Brand, C, Frame, QuoteMark, fonts } from "@/lib/card";
+import { Brand, C, Frame, PlayCta, QuoteMark, STORY, fonts } from "@/lib/card";
 
 // Imagem do resultado da partida para compartilhar (stories / WhatsApp). Tudo vem da URL:
 // não há nada secreto aqui, é só o placar que o próprio jogador vê.
@@ -34,24 +34,29 @@ export function GET(req: Request) {
   const results = (q.get("r") ?? "").replace(/[^cws]/g, "").slice(0, 30).split("").filter(Boolean);
   const day = /^\d{4}-\d{2}-\d{2}$/.test(q.get("d") ?? "") ? q.get("d")!.split("-").reverse().slice(0, 2).join("/") : null;
 
+  const host = new URL(req.url).host.replace(/^www\./, "");
+  const pct = total ? Math.round((100 * correct) / total) : 0;
+
   return new ImageResponse(
     (
-      <Frame padding={90}>
-        <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
-          <QuoteMark size={100} />
-          <Brand size={64} />
+      <Frame padding={96}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 28, marginTop: 40 }}>
+          <QuoteMark size={110} />
+          <Brand size={70} />
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 70 }}>
+        <div style={{ display: "flex", flex: 1 }} />
+
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div
             style={{
               display: "flex",
-              fontSize: 34,
+              fontSize: 38,
               fontWeight: 800,
               textTransform: "uppercase",
-              letterSpacing: 4,
-              padding: "10px 26px",
-              borderRadius: 16,
+              letterSpacing: 5,
+              padding: "12px 30px",
+              borderRadius: 18,
               background: "rgba(255,255,255,0.12)",
               color: "rgba(255,255,255,0.8)",
               transform: "rotate(-2deg)",
@@ -62,23 +67,23 @@ export function GET(req: Request) {
           <div
             style={{
               display: "flex",
-              fontSize: 260,
               alignItems: "flex-end",
+              fontSize: 340,
               fontWeight: 800,
               color: C.lime,
               lineHeight: 1,
-              marginTop: 30,
-              letterSpacing: -8,
-              textShadow: "0 14px 0 rgba(0,0,0,0.5)",
+              marginTop: 40,
+              letterSpacing: -10,
+              textShadow: "0 16px 0 rgba(0,0,0,0.5)",
             }}
           >
             {correct}
-            <span style={{ fontSize: 150, color: "rgba(255,255,255,0.4)", letterSpacing: -4 }}>/{total}</span>
+            <span style={{ fontSize: 180, color: "rgba(255,255,255,0.4)", letterSpacing: -4, marginBottom: 20 }}>/{total}</span>
           </div>
-          <div style={{ display: "flex", fontSize: 48, color: "rgba(255,255,255,0.7)", marginTop: 10 }}>acertos</div>
+          <div style={{ display: "flex", fontSize: 56, color: "rgba(255,255,255,0.7)", marginTop: 6 }}>acertos</div>
         </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 14, marginTop: 60 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 14, marginTop: 80 }}>
           {results.map((r, i) => (
             <div
               key={i}
@@ -98,9 +103,9 @@ export function GET(req: Request) {
           ))}
         </div>
 
-        <div style={{ display: "flex", gap: 30, marginTop: 60 }}>
+        <div style={{ display: "flex", gap: 30, marginTop: 80 }}>
           {[
-            ["Aproveitamento", `${total ? Math.round((100 * correct) / total) : 0}%`],
+            ["Aproveitamento", `${pct}%`],
             ["Maior sequência", String(best)],
           ].map(([label, value]) => (
             <div
@@ -110,26 +115,25 @@ export function GET(req: Request) {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                padding: "28px 0",
-                borderRadius: 36,
+                padding: "34px 0",
+                borderRadius: 40,
                 background: "rgba(255,255,255,0.09)",
                 border: "2px solid rgba(255,255,255,0.12)",
               }}
             >
-              <div style={{ display: "flex", fontSize: 30, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: 2 }}>
+              <div style={{ display: "flex", fontSize: 32, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: 2 }}>
                 {label}
               </div>
-              <div style={{ display: "flex", fontSize: 76, fontWeight: 800 }}>{value}</div>
+              <div style={{ display: "flex", fontSize: 88, fontWeight: 800 }}>{value}</div>
             </div>
           ))}
         </div>
 
         <div style={{ display: "flex", flex: 1 }} />
-        <div style={{ display: "flex", justifyContent: "center", fontSize: 40, fontWeight: 800 }}>
-          Duvido você acertar mais.
-        </div>
+        <PlayCta host={host} title="Duvido você acertar mais." />
+        <div style={{ display: "flex", height: 60 }} />
       </Frame>
     ),
-    { width: 1080, height: 1350, fonts, headers: { "cache-control": "public, max-age=31536000, immutable" } },
+    { ...STORY, fonts, headers: { "cache-control": "public, max-age=31536000, immutable" } },
   );
 }

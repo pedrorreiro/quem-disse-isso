@@ -956,7 +956,10 @@ grant execute on function
 -- ===== supabase/migrations/20261018000000_alternativas.sql =====
 -- Alternativas que fazem sentido: as 3 opções erradas saem da mesma área (futebol, música...),
 -- do mesmo gênero e do mesmo "lado" (brasileiro x gringo) de quem disse a frase.
--- Pode rodar mais de uma vez.
+-- Também aumenta o tempo de cada rodada para 30 s. Pode rodar mais de uma vez.
+
+create or replace function public.round_seconds() returns int
+language sql immutable as $$ select 30 $$;
 
 alter table public.people add column if not exists area   text;
 alter table public.people add column if not exists gender text;

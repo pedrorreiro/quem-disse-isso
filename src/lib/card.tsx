@@ -68,3 +68,29 @@ export function Brand({ size = 44 }: { size?: number }) {
     </div>
   );
 }
+
+/** Rodapé com chamada para jogar e o endereço do site. */
+export function PlayCta({ host, title }: { host: string; title: string }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 28 }}>
+      <div style={{ display: "flex", fontSize: 52, fontWeight: 800, textAlign: "center" }}>{title}</div>
+      <div
+        style={{
+          display: "flex",
+          fontSize: 44,
+          fontWeight: 800,
+          color: C.ink,
+          background: C.lime,
+          padding: "22px 48px",
+          borderRadius: 28,
+          boxShadow: "0 10px 0 0 rgba(0,0,0,0.5)",
+        }}
+      >
+        Jogue em {host}
+      </div>
+    </div>
+  );
+}
+
+/** Tamanho de Stories / Status (9:16). */
+export const STORY = { width: 1080, height: 1920 };

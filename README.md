@@ -36,9 +36,10 @@ No desktop: teclas **1–4** escolhem a carta e **Enter** avança.
 
 O jogo só usa frases `verified` **de pessoas com foto aprovada**. Um trigger impede marcar frase como `verified` ou foto como `approved` sem um admin registrado como responsável, inclusive por SQL direto. É uma trava contra engano: quem tem acesso total ao banco ainda pode desligar triggers. Trocar a foto de uma pessoa a devolve para `pending`.
 
-### Regras de pontuação (calculadas no servidor)
-- Acerto: base 100 (−25 por opção eliminada, mín. 25) + bônus de velocidade 0–100, vezes o combo (x1, +0,25 por acerto seguido, máx. x2).
-- 20 s por rodada. A cada terço do tempo uma opção errada some automaticamente. Curingas (só no solo): 50/50, +5 s, pular.
+### Regras (validadas no servidor)
+- O resultado mostrado é em **acertos** (ex.: 7/10) e maior sequência. O servidor ainda calcula pontos internamente, mas eles não aparecem.
+- 30 s por rodada. Curingas (só no solo): 50/50, +5 s, pular.
+- As 3 opções erradas vêm da mesma **área** (futebol, música…), do mesmo **gênero** e do mesmo lado (brasileiro x gringo) de quem disse. Área e gênero ficam editáveis em /admin → Pessoas.
 
 ### Segurança
 O cliente **não lê** `quotes` nem `game_rounds` (RLS sem policies). Tudo passa por funções `SECURITY DEFINER` (`start_game`, `next_round`, `answer_round`, `use_joker`, `eliminate_option`, `get_session_summary`, `get_quote_preview`) que não revelam a resposta antes de ela ser enviada e medem o tempo no servidor. Funções internas (`_pick_options`, …) não são executáveis pelo cliente.

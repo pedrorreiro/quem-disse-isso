@@ -68,7 +68,7 @@ export default function Game({ mode, category, quoteId }: Props) {
   const [round, setRound] = useState<Round | null>(null);
   const [eliminated, setEliminated] = useState<string[]>([]);
   const [jokers, setJokers] = useState<Jokers>({});
-  const [totalSeconds, setTotalSeconds] = useState(20);
+  const [totalSeconds, setTotalSeconds] = useState(30);
   const [deadline, setDeadline] = useState(0);
   const [now, setNow] = useState(0);
   // resultado de cada rodada (posição → acerto/erro), para as bolinhas e o contador de acertos
