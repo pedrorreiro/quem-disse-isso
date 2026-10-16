@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Quem Disse Isso?
 
-## Getting Started
+Aparece uma frase de uma pessoa famosa; o jogador escolhe, entre 4 cartas (foto + nome), quem a disse. Toda frase tem fonte real clicável.
 
-First, run the development server:
+Next.js (App Router, mobile-first) + Supabase (Postgres, Auth anônimo, RPCs). Plano completo: [`../PLANO.md`](../PLANO.md).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Rodando
+
+1. **Supabase** — local (`supabase start`, aplica `supabase/migrations` e `supabase/seed.sql`) ou um projeto na nuvem:
+   - rode as migrations em ordem (`supabase/migrations/*.sql`) e depois `supabase/seed.sql`;
+   - em **Authentication → Sign In / Providers**, ative **Allow anonymous sign-ins** (jogadores) e o login por **e-mail** (admin);
+   - em **Authentication → URL Configuration**, adicione `http://localhost:3000/admin` (e a URL de produção) nas Redirect URLs.
+2. `cp .env.example .env.local` e preencha `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+3. `npm install && npm run dev` → http://localhost:3000
+
+## Como funciona
+
+| Rota | O que é |
+|---|---|
+| `/` | Início, categorias vindas do banco |
+| `/jogar?cat=…` | Partida solo de 10 rodadas (opcionalmente por categoria) |
+| `/diario` | Desafio do dia: 5 frases iguais para todos, uma tentativa por dia (fuso America/Sao_Paulo) |
+| `/q/<id>` | Link compartilhado de uma frase (prévia e imagem OG mostram a frase, nunca o autor) |
+| `/creditos` | Créditos das fotos aprovadas (autor + licença) |
+| `/admin` | Painel de revisão (só admins) |
+
+No desktop: teclas **1–4** escolhem a carta e **Enter** avança.
+
+## Revisão: só o admin aprova
+
+1. Entre em `/admin` com seu e-mail (link mágico). Na primeira vez a tela mostra o SQL para virar admin:
+   `insert into public.admins (user_id) values ('<seu id>');`
+2. **Frases**: fila de rascunhos, uma por vez. Dá para editar, salvar rascunho, rejeitar (com anotação) ou aprovar. Fonte do YouTube aparece embutida no minuto informado.
+3. **Fotos**: cada pessoa precisa de foto aprovada. *Trocar foto* busca a pessoa no Wikidata e puxa a foto do Commons já com autor e licença.
+4. **Pessoas** / **Nova frase**: cadastro manual (frases novas entram como rascunho).
+
+O jogo só usa frases `verified` **de pessoas com foto aprovada**. Um trigger impede marcar frase como `verified` ou foto como `approved` sem um admin registrado como responsável, inclusive por SQL direto. É uma trava contra engano: quem tem acesso total ao banco ainda pode desligar triggers. Trocar a foto de uma pessoa a devolve para `pending`.
+
+### Regras de pontuação (calculadas no servidor)
+- Acerto: base 100 (−25 por opção eliminada, mín. 25) + bônus de velocidade 0–100, vezes o combo (x1, +0,25 por acerto seguido, máx. x2).
+- 20 s por rodada. A cada terço do tempo uma opção errada some automaticamente. Curingas (só no solo): 50/50, +5 s, pular.
+
+### Segurança
+O cliente **não lê** `quotes` nem `game_rounds` (RLS sem policies). Tudo passa por funções `SECURITY DEFINER` (`start_game`, `next_round`, `answer_round`, `use_joker`, `eliminate_option`, `get_session_summary`, `get_quote_preview`) que não revelam a resposta antes de ela ser enviada e medem o tempo no servidor. Funções internas (`_pick_options`, …) não são executáveis pelo cliente.
+
+## Dados de exemplo
+
+`supabase/seed.sql` cria **12 pessoas e 14 frases fictícias inventadas** (`is_demo = true`, ilustrações em `public/demo/`), todas como rascunho e foto pendente. Aprove pelo painel para testar. Antes de publicar:
+
+```sql
+delete from quotes where is_demo;
+delete from people where is_demo;
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Frases reais só entram com `status = 'verified'`, fonte primária (`source_url`, `source_timestamp` se for vídeo) e snapshot (`archive_url`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Ainda não feito (próximas etapas)
+- Curadoria das frases reais (candidatas entram como rascunho para revisão).
+- Duelo 1x1 e salas com amigos (2ª entrega).
+- Rate limit / anti-abuso nas RPCs e ranking.

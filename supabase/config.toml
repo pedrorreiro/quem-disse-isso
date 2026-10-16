@@ -1,0 +1,10 @@
+# Configuração mínima para `supabase start` (desenvolvimento local).
+project_id = "quem-disse-isso"
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[auth]
+# O jogo usa login anônimo: o progresso fica vinculado à sessão, sem cadastro.
+enable_anonymous_sign_ins = true
