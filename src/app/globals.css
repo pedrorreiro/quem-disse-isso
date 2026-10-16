@@ -1,14 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0f;
-  --foreground: #f5f5f4;
+  --background: #0d0717;
+  --foreground: #f7f3ff;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
+  --font-display: var(--font-bricolage), var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* paleta do jogo */
+@theme {
+  --color-ink: #0d0717;
+  --color-lime: #c8ff2e;
+  --color-pink: #ff4fb8;
+  --color-cyan: #3ee6ff;
+  --color-grape: #7c3aed;
 }
 
 body {
@@ -16,4 +26,65 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Botão "adesivo": sombra sólida que afunda no toque. */
+@utility btn-pop {
+  border-radius: 1rem;
+  padding: 0.85rem 1.25rem;
+  text-align: center;
+  font-weight: 800;
+  box-shadow: 0 5px 0 0 rgb(0 0 0 / 0.5);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    filter 0.12s ease;
+  &:hover {
+    filter: brightness(1.08);
+  }
+  &:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 0 rgb(0 0 0 / 0.5);
+  }
+  &:disabled {
+    opacity: 0.35;
+    transform: none;
+    box-shadow: 0 5px 0 0 rgb(0 0 0 / 0.5);
+  }
+}
+
+/* Fundo: manchas de cor desfocadas que derivam devagar + granulado. */
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(8vw, -6vh, 0) scale(1.15);
+  }
+  66% {
+    transform: translate3d(-6vw, 5vh, 0) scale(0.92);
+  }
+}
+
+.blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  opacity: 0.45;
+  animation: drift 22s ease-in-out infinite;
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob {
+    animation: none;
+  }
 }

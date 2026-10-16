@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { AnimatePresence, motion } from "motion/react";
 import OptionCard, { type CardState } from "./OptionCard";
 import Results from "./Results";
 import ShareButton from "./ShareButton";
+import { Confetti, CountUp, buzz } from "./fx";
 import {
   answerRound,
   eliminateOption,
@@ -19,14 +21,21 @@ type Phase = "loading" | "question" | "answering" | "reveal" | "finished" | "err
 
 type Props = { mode: GameMode; category?: string; quoteId?: string };
 
-const btnPrimary = "rounded-xl bg-amber-400 px-4 py-3 text-center font-bold text-neutral-950 active:scale-[0.98]";
-const btnGhost = "rounded-xl bg-white/10 px-4 py-3 text-center font-semibold active:scale-[0.98]";
+const btnPrimary = "btn-pop bg-lime text-ink";
+const btnGhost = "btn-pop bg-white/10 font-bold backdrop-blur";
 
-const JOKERS: { name: JokerName; label: string }[] = [
-  { name: "fifty", label: "50/50" },
-  { name: "time", label: "+5s" },
-  { name: "skip", label: "Pular" },
+const JOKERS: { name: JokerName; label: string; icon: string }[] = [
+  { name: "fifty", label: "50/50", icon: "🌓" },
+  { name: "time", label: "+5s", icon: "⏱️" },
+  { name: "skip", label: "Pular", icon: "⏭️" },
 ];
+
+// frases longas ganham fonte menor para caber sem rolar
+function quoteSize(text: string) {
+  if (text.length > 160) return "text-xl md:text-3xl";
+  if (text.length > 90) return "text-2xl md:text-4xl";
+  return "text-3xl md:text-5xl";
+}
 
 function storage(key: string, value?: string | null): string | null {
   try {
@@ -144,6 +153,7 @@ export default function Game({ mode, category, quoteId }: Props) {
         setScore(r.score);
         setStreak(r.streak);
         setPhase("reveal");
+        buzz(r.correct ? 30 : [40, 40, 40]);
       } catch (e) {
         fail(e);
       }
@@ -223,13 +233,32 @@ export default function Game({ mode, category, quoteId }: Props) {
     }
   }
 
+
   if (phase === "loading") {
-    return <p className="m-auto animate-pulse text-white/60">Carregando…</p>;
+    return (
+      <div className="m-auto flex flex-col items-center gap-4" role="status" aria-label="Carregando">
+        <div className="flex gap-2">
+          {["bg-lime", "bg-pink", "bg-cyan"].map((c, i) => (
+            <motion.span
+              key={c}
+              className={`size-4 rounded-full ${c}`}
+              animate={{ y: [0, -14, 0] }}
+              transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.12, ease: "easeInOut" }}
+            />
+          ))}
+        </div>
+        <p className="font-display text-sm font-bold text-white/60">Embaralhando as frases…</p>
+      </div>
+    );
   }
 
   if (phase === "error") {
     return (
-      <div className="m-auto flex max-w-xs flex-col gap-4 text-center">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="m-auto flex max-w-xs flex-col gap-4 text-center"
+      >
         <p className="text-white/80">{error}</p>
         <button type="button" className={btnPrimary} onClick={() => void begin(true)}>
           Tentar de novo
@@ -237,7 +266,7 @@ export default function Game({ mode, category, quoteId }: Props) {
         <Link href="/" className={btnGhost}>
           Início
         </Link>
-      </div>
+      </motion.div>
     );
   }
 
@@ -248,8 +277,10 @@ export default function Game({ mode, category, quoteId }: Props) {
   if (!round) return null;
 
   const revealed = phase === "reveal" && reveal;
-  const lowTime = remaining / totalSeconds < 0.25;
+  const fraction = revealed ? 0 : remaining / totalSeconds;
+  const lowTime = fraction < 0.25;
   const multiplier = 1 + Math.min(streak, 4) * 0.25;
+  const words = round.quote_text.split(/\s+/);
 
   function cardState(id: string): CardState {
     if (revealed) {
@@ -261,123 +292,221 @@ export default function Game({ mode, category, quoteId }: Props) {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 py-4">
-      <header className="flex items-center justify-between text-sm">
-        <Link href="/" className="text-white/50" aria-label="Voltar ao início">
+    <div className="flex flex-1 flex-col gap-4 py-4 md:justify-center md:py-10">
+      <header className="flex items-center justify-between gap-3">
+        <Link
+          href="/"
+          className="grid size-10 place-items-center rounded-full bg-white/10 text-white/70 transition hover:bg-white/20"
+          aria-label="Voltar ao início"
+        >
           ✕
         </Link>
-        <span className="text-white/60">
-          {round.position}/{round.total_rounds}
-        </span>
-        <span className="font-bold tabular-nums">
-          {score}
-          {streak > 1 && <span className="ml-2 text-amber-400">🔥 x{multiplier.toFixed(2).replace(/\.?0+$/, "")}</span>}
-        </span>
+
+        {/* progresso: uma bolinha por rodada */}
+        <div className="flex flex-1 justify-center gap-1.5" aria-label={`Rodada ${round.position} de ${round.total_rounds}`}>
+          {Array.from({ length: round.total_rounds }, (_, i) => (
+            <motion.span
+              key={i}
+              layout
+              className={`h-2 rounded-full ${
+                i + 1 < round.position ? "bg-white/60" : i + 1 === round.position ? "bg-lime" : "bg-white/15"
+              }`}
+              animate={{ width: i + 1 === round.position ? 22 : 8 }}
+            />
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <AnimatePresence>
+            {streak > 1 && (
+              <motion.span
+                key={streak}
+                initial={{ scale: 0, rotate: -30 }}
+                animate={{ scale: 1, rotate: -6 }}
+                exit={{ scale: 0 }}
+                transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                className="rounded-full bg-pink px-2.5 py-1 font-display text-xs font-black text-white shadow-[0_3px_0_0_rgb(0_0_0/0.5)]"
+              >
+                🔥 x{multiplier.toFixed(2).replace(/\.?0+$/, "")}
+              </motion.span>
+            )}
+          </AnimatePresence>
+          <span className="rounded-full bg-white/10 px-3 py-1 font-display text-lg font-black tabular-nums text-lime">
+            <CountUp value={score} />
+          </span>
+        </div>
       </header>
 
-      <div className="h-2 overflow-hidden rounded-full bg-white/10" aria-hidden>
-        <div
-          className={`h-full ${lowTime ? "bg-rose-500" : "bg-amber-400"}`}
-          style={{ width: `${revealed ? 0 : (remaining / totalSeconds) * 100}%` }}
-        />
-      </div>
-
-      <blockquote className="rounded-2xl bg-white/5 p-5 text-xl font-semibold leading-snug md:p-8 md:text-3xl">
-        “{round.quote_text}”
-      </blockquote>
-
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {round.options.map((o, idx) => (
-          <OptionCard
-            key={o.id}
-            option={o}
-            hotkey={idx + 1}
-            state={cardState(o.id)}
-            disabled={phase !== "question" || eliminated.includes(o.id)}
-            onPick={(id) => void answer(id)}
+      {/* barra de tempo */}
+      <div className="flex items-center gap-3" aria-hidden>
+        <div className="h-3 flex-1 overflow-hidden rounded-full bg-white/10">
+          <motion.div
+            className={`h-full rounded-full ${lowTime ? "bg-pink" : "bg-gradient-to-r from-cyan to-lime"}`}
+            style={{ width: `${fraction * 100}%` }}
+            animate={lowTime && !revealed ? { opacity: [1, 0.45, 1] } : { opacity: 1 }}
+            transition={lowTime ? { duration: 0.6, repeat: Infinity } : undefined}
           />
-        ))}
+        </div>
+        <span
+          className={`w-9 text-right font-display text-sm font-black tabular-nums ${lowTime && !revealed ? "text-pink" : "text-white/60"}`}
+        >
+          {Math.ceil(revealed ? 0 : remaining)}s
+        </span>
       </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={round.round_id}
+          initial={{ opacity: 0, x: 60 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -60, transition: { duration: 0.2 } }}
+          transition={{ type: "spring", stiffness: 260, damping: 26 }}
+          className="flex flex-col gap-4"
+        >
+          <blockquote className="relative rounded-[2rem] bg-white/[0.07] p-6 pt-8 ring-1 ring-white/10 backdrop-blur-md md:p-10">
+            <motion.span
+              aria-hidden
+              initial={{ scale: 0, rotate: -40 }}
+              animate={{ scale: 1, rotate: -10 }}
+              transition={{ type: "spring", stiffness: 400, damping: 12, delay: 0.1 }}
+              className="absolute -left-2 -top-4 grid size-12 place-items-center rounded-2xl bg-pink font-display text-4xl font-black leading-none text-white shadow-[0_4px_0_0_rgb(0_0_0/0.5)]"
+            >
+              “
+            </motion.span>
+            <p className={`font-display font-extrabold leading-[1.15] tracking-tight ${quoteSize(round.quote_text)}`}>
+              <span className="sr-only">{round.quote_text}</span>
+              <span aria-hidden>
+                {words.map((w, i) => (
+                  <motion.span
+                    key={i}
+                    className="inline-block"
+                    initial={{ opacity: 0, y: 14, filter: "blur(6px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    transition={{ duration: 0.3, delay: Math.min(i * 0.035, 0.9) }}
+                  >
+                    {w}&nbsp;
+                  </motion.span>
+                ))}
+              </span>
+            </p>
+          </blockquote>
+
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {round.options.map((o, idx) => (
+              <OptionCard
+                key={o.id}
+                option={o}
+                index={idx}
+                state={cardState(o.id)}
+                disabled={phase !== "question" || eliminated.includes(o.id)}
+                onPick={(id) => void answer(id)}
+              />
+            ))}
+          </div>
+        </motion.div>
+      </AnimatePresence>
 
       {phase !== "reveal" && (
         <div className="flex justify-center gap-2">
-          {JOKERS.filter(({ name }) => name in jokers).map(({ name, label }) => (
-            <button
+          {JOKERS.filter(({ name }) => name in jokers).map(({ name, label, icon }) => (
+            <motion.button
               key={name}
               type="button"
+              whileTap={{ scale: 0.9, rotate: -4 }}
               disabled={phase !== "question" || (jokers[name] ?? 0) < 1}
               onClick={() => void triggerJoker(name)}
-              className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold disabled:opacity-30"
+              className="btn-pop flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-sm backdrop-blur"
             >
-              {label} · {jokers[name] ?? 0}
-            </button>
+              <span aria-hidden>{icon}</span>
+              {label}
+              <span className="grid size-5 place-items-center rounded-full bg-white/15 text-xs">{jokers[name] ?? 0}</span>
+            </motion.button>
           ))}
         </div>
       )}
 
-      {revealed && (
-        <section className="mt-auto flex flex-col gap-3 rounded-2xl bg-white/5 p-4 md:mt-2 md:p-6">
-          <div className="flex items-baseline justify-between">
-            <h2 className={`text-lg font-bold ${reveal.correct ? "text-emerald-400" : "text-rose-400"}`}>
-              {reveal.timed_out ? "Tempo esgotado" : reveal.correct ? "Correto" : "Errado"}
-            </h2>
-            {reveal.correct && (
-              <span className="font-bold text-amber-400">
-                +{reveal.points}
-                {reveal.multiplier > 1 && <span className="ml-1 text-xs">x{reveal.multiplier}</span>}
-              </span>
-            )}
-          </div>
-          <p>
-            <span className="font-semibold">{reveal.person.name}</span>
-            {(reveal.quote.context || reveal.quote.said_on) && (
-              <span className="text-sm text-white/60">
-                {" "}
-                — {[reveal.quote.context, reveal.quote.said_on?.slice(0, 4)].filter(Boolean).join(", ")}
-              </span>
-            )}
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <a
-              href={reveal.quote.source_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={btnGhost}
-            >
-              Ver fonte{reveal.quote.source_timestamp ? ` (${reveal.quote.source_timestamp})` : ""} ↗
-            </a>
-            <ShareButton
-              label="Compartilhar"
-              className={btnGhost}
-              getData={() => ({
-                title: "Quem Disse Isso?",
-                text: `Quem disse isso? “${reveal.quote.text}”`,
-                url: `${window.location.origin}/q/${reveal.quote_id}`,
-              })}
-            />
-          </div>
-          {reveal.person.image_credit && (
-            <p className="text-center text-xs text-white/40">
-              Foto: {reveal.person.image_credit}
-              {reveal.person.image_license && ` · ${reveal.person.image_license}`}
+      {revealed && reveal.correct && <Confetti key={reveal.quote_id} />}
+
+      <AnimatePresence>
+        {revealed && (
+          <motion.section
+            key={reveal.quote_id}
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 26 }}
+            className={`mt-auto flex flex-col gap-3 rounded-[2rem] p-4 ring-2 backdrop-blur-md md:mt-2 md:p-6 ${
+              reveal.correct ? "bg-lime/10 ring-lime/60" : "bg-pink/10 ring-pink/60"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <motion.h2
+                initial={{ scale: 0.6, rotate: -6 }}
+                animate={{ scale: 1, rotate: -2 }}
+                transition={{ type: "spring", stiffness: 500, damping: 14, delay: 0.1 }}
+                className={`rounded-xl px-3 py-1 font-display text-xl font-black uppercase ${
+                  reveal.correct ? "bg-lime text-ink" : "bg-pink text-white"
+                }`}
+              >
+                {reveal.timed_out ? "Tempo esgotado" : reveal.correct ? "Correto" : "Errado"}
+              </motion.h2>
+              {reveal.correct && (
+                <motion.span
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.25 }}
+                  className="font-display text-2xl font-black text-lime"
+                >
+                  +{reveal.points}
+                  {reveal.multiplier > 1 && <span className="ml-1 text-sm">x{reveal.multiplier}</span>}
+                </motion.span>
+              )}
+            </div>
+            <p>
+              <span className="font-display text-lg font-bold">{reveal.person.name}</span>
+              {(reveal.quote.context || reveal.quote.said_on) && (
+                <span className="text-sm text-white/60">
+                  {" "}
+                  — {[reveal.quote.context, reveal.quote.said_on?.slice(0, 4)].filter(Boolean).join(", ")}
+                </span>
+              )}
             </p>
-          )}
-          {reveal.quote.archive_url && (
-            <a
-              href={reveal.quote.archive_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-center text-xs text-white/40 underline"
-            >
-              Fonte arquivada
-            </a>
-          )}
-          <button type="button" onClick={() => void advance()} className={btnPrimary}>
-            {reveal.finished ? "Ver resultado" : "Próxima"}
-            <kbd className="ml-2 hidden text-xs font-normal opacity-60 md:inline">Enter</kbd>
-          </button>
-        </section>
-      )}
+            <div className="grid grid-cols-2 gap-2">
+              <a href={reveal.quote.source_url} target="_blank" rel="noopener noreferrer" className={`${btnGhost} text-sm`}>
+                Ver fonte{reveal.quote.source_timestamp ? ` (${reveal.quote.source_timestamp})` : ""} ↗
+              </a>
+              <ShareButton
+                label="Compartilhar"
+                className={`${btnGhost} text-sm`}
+                getData={() => ({
+                  title: "Quem Disse Isso?",
+                  text: `Quem disse isso? “${reveal.quote.text}”`,
+                  url: `${window.location.origin}/q/${reveal.quote_id}`,
+                })}
+              />
+            </div>
+            {reveal.person.image_credit && (
+              <p className="text-center text-xs text-white/40">
+                Foto: {reveal.person.image_credit}
+                {reveal.person.image_license && ` · ${reveal.person.image_license}`}
+              </p>
+            )}
+            {reveal.quote.archive_url && (
+              <a
+                href={reveal.quote.archive_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-center text-xs text-white/40 underline"
+              >
+                Fonte arquivada
+              </a>
+            )}
+            <button type="button" onClick={() => void advance()} className={`${btnPrimary} text-lg`}>
+              {reveal.finished ? "Ver resultado" : "Próxima →"}
+              <kbd className="ml-2 hidden text-xs font-normal opacity-60 md:inline">Enter</kbd>
+            </button>
+          </motion.section>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
