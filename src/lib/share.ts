@@ -4,12 +4,24 @@ export type ShareOutcome = "shared" | "copied" | "downloaded" | "failed";
 
 type ShareData = { title: string; text: string; url: string };
 
+/** Mouse como ponteiro principal: computador. */
+const isDesktop = () => typeof matchMedia === "function" && !matchMedia("(pointer: coarse)").matches;
+
 /**
  * Celular: folha de compartilhamento nativa com a imagem (quando houver) + texto.
- * Desktop: baixa a imagem e copia o texto com o link.
+ * Computador: só texto e link. Na folha do macOS o WhatsApp Desktop cola o caminho
+ * do arquivo como texto, e a prévia do link já mostra a imagem.
  */
 export async function share(data: ShareData, image?: File | null): Promise<ShareOutcome> {
   try {
+    if (isDesktop()) {
+      if (typeof navigator.share === "function") {
+        await navigator.share(data);
+        return "shared";
+      }
+      await navigator.clipboard.writeText(`${data.text}\n${data.url}`);
+      return "copied";
+    }
     if (image && navigator.canShare?.({ files: [image] })) {
       await navigator.share({ files: [image], title: data.title, text: `${data.text}\n${data.url}` });
       return "shared";
