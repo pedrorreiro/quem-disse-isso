@@ -40,6 +40,19 @@ function htmlToText(html: string) {
   return new DOMParser().parseFromString(html, "text/html").body.textContent?.trim() ?? "";
 }
 
+/**
+ * Para a carga em lote: usa o wikidata_id se já houver; senão pega o primeiro resultado
+ * da busca pelo nome que tenha foto. A foto continua indo para a fila de aprovação.
+ */
+export async function findPhoto(name: string, wikidataId?: string | null): Promise<WikiPhoto | null> {
+  const ids = wikidataId ? [wikidataId] : (await searchPeople(name)).slice(0, 3).map((h) => h.id);
+  for (const id of ids) {
+    const photo = await getPhoto(id);
+    if (photo) return photo;
+  }
+  return null;
+}
+
 /** Foto principal (P18) da pessoa no Wikidata, com autor e licença vindos do Commons. */
 export async function getPhoto(wikidataId: string): Promise<WikiPhoto | null> {
   const entity = await getJson(WIKIDATA, { action: "wbgetentities", ids: wikidataId, props: "claims" });

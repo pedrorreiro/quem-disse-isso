@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { adminPeople, reviewPhoto, type Person } from "@/lib/admin";
+import { adminPeople, reviewPhoto, upsertPerson, type Person } from "@/lib/admin";
 import { friendlyError } from "@/lib/api";
 import { categoryLabel } from "@/lib/share";
+import { findPhoto } from "@/lib/wikimedia";
 import PersonEditor from "./PersonEditor";
 import { Avatar, ExternalLink, PhotoBadge, btnDanger, btnGhost, btnOk, btnPrimary } from "./ui";
 
@@ -80,6 +81,14 @@ export default function PeopleAdmin({ view, onChanged }: { view: "photos" | "peo
                   <ExternalLink href={current.image_source_url}>abrir</ExternalLink>
                   {!current.image_source_url && "—"}
                 </dd>
+                {current.wikidata_id && (
+                  <>
+                    <dt className="text-white/50">Wikidata</dt>
+                    <dd>
+                      <ExternalLink href={`https://www.wikidata.org/wiki/${current.wikidata_id}`}>{current.wikidata_id}</ExternalLink>
+                    </dd>
+                  </>
+                )}
               </dl>
               <p className="text-sm text-white/50">
                 Confira: é a pessoa certa? A foto é reconhecível? A licença permite uso (CC BY, CC BY-SA, domínio público)?
@@ -103,6 +112,10 @@ export default function PeopleAdmin({ view, onChanged }: { view: "photos" | "peo
           </div>
         )}
 
+        {noPhoto.some((p) => !p.image_url) && (
+          <BulkPhotos people={noPhoto.filter((p) => !p.image_url)} onDone={() => void load().then(onChanged)} />
+        )}
+
         {noPhoto.length > 0 && (
           <section>
             <h3 className="mb-3 text-sm uppercase tracking-widest text-white/50">Sem foto ou com foto rejeitada</h3>
@@ -123,6 +136,57 @@ export default function PeopleAdmin({ view, onChanged }: { view: "photos" | "peo
       </div>
       <PeopleGrid people={people} onEdit={(p) => setMode({ kind: "edit", person: p })} action="Editar" />
     </div>
+  );
+}
+
+/** Busca no Wikidata/Commons a foto de cada pessoa sem foto. Nada é aprovado aqui: tudo cai na fila acima. */
+function BulkPhotos({ people, onDone }: { people: Person[]; onDone: () => void }) {
+  const [running, setRunning] = useState(false);
+  const [progress, setProgress] = useState("");
+  const [misses, setMisses] = useState<string[]>([]);
+
+  async function run() {
+    setRunning(true);
+    setMisses([]);
+    const missed: string[] = [];
+    for (const [i, p] of people.entries()) {
+      setProgress(`${i + 1}/${people.length} · ${p.name}`);
+      try {
+        const photo = await findPhoto(p.name, p.wikidata_id);
+        if (!photo) {
+          missed.push(`${p.name}: nenhuma foto no Wikidata`);
+          continue;
+        }
+        await upsertPerson({ id: p.id, ...photo, image_type: "foto" });
+      } catch (e) {
+        missed.push(`${p.name}: ${friendlyError(e)}`);
+      }
+    }
+    setMisses(missed);
+    setProgress(`Pronto: ${people.length - missed.length} foto(s) encontradas, esperando sua aprovação.`);
+    setRunning(false);
+    onDone();
+  }
+
+  return (
+    <section className="flex flex-col gap-3 rounded-2xl bg-white/5 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-white/70">
+          {people.length} pessoa(s) sem foto. A busca usa o Wikidata e o Commons, com autor e licença. Você ainda aprova uma por uma.
+        </p>
+        <button type="button" className={btnPrimary} disabled={running} onClick={() => void run()}>
+          {running ? "Buscando…" : "Buscar fotos de todos"}
+        </button>
+      </div>
+      {progress && <p className="text-sm text-white/50">{progress}</p>}
+      {misses.length > 0 && (
+        <ul className="list-disc pl-5 text-sm text-amber-200/80">
+          {misses.map((m) => (
+            <li key={m}>{m}</li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
