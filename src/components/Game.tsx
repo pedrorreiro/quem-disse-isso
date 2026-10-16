@@ -33,7 +33,7 @@ import type { GameMode, JokerName, Jokers, Reveal, Round, Summary } from "@/lib/
 
 type Phase = "loading" | "question" | "answering" | "reveal" | "finished" | "error";
 
-type Props = { mode: GameMode; category?: string; quoteId?: string };
+type Props = { mode: GameMode; category?: string; quoteId?: string; challengeId?: string };
 
 const btnPrimary = "btn-pop bg-lime text-ink";
 const btnGhost = "btn-pop bg-white/10 font-bold backdrop-blur";
@@ -62,7 +62,7 @@ function storage(key: string, value?: string | null): string | null {
   return null;
 }
 
-export default function Game({ mode, category, quoteId }: Props) {
+export default function Game({ mode, category, quoteId, challengeId }: Props) {
   const [phase, setPhase] = useState<Phase>("loading");
   const [error, setError] = useState("");
   const [round, setRound] = useState<Round | null>(null);
@@ -130,7 +130,7 @@ export default function Game({ mode, category, quoteId }: Props) {
             storage(storageKey, null);
           }
         }
-        const sid = await startGame(mode, { category, quoteId });
+        const sid = await startGame(mode, { category, quoteId, challengeId });
         sessionId.current = sid;
         if (mode === "solo") storage(storageKey, sid);
         await loadRound(sid);
@@ -138,7 +138,7 @@ export default function Game({ mode, category, quoteId }: Props) {
         fail(e);
       }
     },
-    [mode, category, quoteId, storageKey, loadRound, fail],
+    [mode, category, quoteId, challengeId, storageKey, loadRound, fail],
   );
 
   useEffect(() => {

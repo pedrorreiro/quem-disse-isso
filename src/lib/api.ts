@@ -1,5 +1,5 @@
 import { ensureSession, getSupabase } from "./supabase";
-import type { GameMode, JokerName, Jokers, Reveal, Round, Summary } from "./types";
+import type { Challenge, GameMode, JokerName, Jokers, Reveal, Round, Summary } from "./types";
 
 export async function rpc<T>(fn: string, args?: Record<string, unknown>): Promise<T> {
   const { data, error } = await getSupabase().rpc(fn, args);
@@ -7,8 +7,12 @@ export async function rpc<T>(fn: string, args?: Record<string, unknown>): Promis
   return data as T;
 }
 
-export async function startGame(mode: GameMode, opts: { category?: string; quoteId?: string } = {}) {
+export async function startGame(
+  mode: GameMode,
+  opts: { category?: string; quoteId?: string; challengeId?: string } = {},
+) {
   await ensureSession();
+  if (mode === "challenge") return rpc<string>("start_challenge", { p_challenge_id: opts.challengeId });
   return rpc<string>("start_game", {
     p_mode: mode,
     ...(opts.category ? { p_category: opts.category } : {}),
@@ -28,6 +32,11 @@ export const playJoker = (roundId: string, joker: JokerName) =>
     p_joker: joker,
   });
 
+export const createChallenge = (sessionId: string, name?: string | null) =>
+  rpc<string>("create_challenge", { p_session_id: sessionId, p_name: name ?? null });
+
+export const getChallenge = (id: string) => rpc<Challenge | null>("get_challenge", { p_challenge_id: id });
+
 export async function listCategories(): Promise<string[]> {
   const { data, error } = await getSupabase().from("people").select("category");
   if (error) throw new Error(error.message);
@@ -39,6 +48,7 @@ const ERRORS: Record<string, string> = {
   quote_not_found: "Essa frase não existe mais.",
   not_enough_people: "O banco ainda precisa de mais pessoas cadastradas.",
   session_not_found: "Partida não encontrada. Comece uma nova.",
+  challenge_not_found: "Esse desafio não existe.",
 };
 
 export function friendlyError(e: unknown): string {

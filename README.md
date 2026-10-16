@@ -20,6 +20,7 @@ Next.js (App Router, mobile-first) + Supabase (Postgres, Auth anônimo, RPCs). P
 | `/` | Início, categorias vindas do banco |
 | `/jogar?cat=…` | Partida solo de 10 rodadas (opcionalmente por categoria) |
 | `/diario` | Desafio do dia: 5 frases iguais para todos, uma tentativa por dia (fuso America/Sao_Paulo) |
+| `/desafio/<id>` | Desafio de um amigo: as mesmas frases, na mesma ordem, e no fim o placar "você x ele" |
 | `/q/<id>` | Link compartilhado de uma frase (prévia e imagem OG mostram a frase, nunca o autor) |
 | `/creditos` | Créditos das fotos aprovadas (autor + licença) |
 | `/admin` | Painel de revisão (só admins) |
@@ -38,11 +39,12 @@ O jogo só usa frases `verified` **de pessoas com foto aprovada**. Um trigger im
 
 ### Regras (validadas no servidor)
 - O resultado mostrado é em **acertos** (ex.: 7/10) e maior sequência. O servidor ainda calcula pontos internamente, mas eles não aparecem.
-- 30 s por rodada. Curingas (só no solo): 50/50, +5 s, pular.
+- 30 s por rodada. Curingas (solo e desafio): 50/50, +5 s, pular.
+- **Desafiar um amigo**: ao terminar uma partida, o jogo gera um link `/desafio/<id>` com o nome escolhido. Quem abre joga as mesmas frases e compara os acertos. Cada pessoa joga cada desafio uma vez (abrir de novo retoma a mesma partida).
 - As 3 opções erradas vêm da mesma **área** (futebol, música…), do mesmo **gênero** e do mesmo lado (brasileiro x gringo) de quem disse. Área e gênero ficam editáveis em /admin → Pessoas.
 
 ### Segurança
-O cliente **não lê** `quotes` nem `game_rounds` (RLS sem policies). Tudo passa por funções `SECURITY DEFINER` (`start_game`, `next_round`, `answer_round`, `use_joker`, `eliminate_option`, `get_session_summary`, `get_quote_preview`) que não revelam a resposta antes de ela ser enviada e medem o tempo no servidor. Funções internas (`_pick_options`, …) não são executáveis pelo cliente.
+O cliente **não lê** `quotes` nem `game_rounds` (RLS sem policies). Tudo passa por funções `SECURITY DEFINER` (`start_game`, `next_round`, `answer_round`, `use_joker`, `eliminate_option`, `get_session_summary`, `get_quote_preview`, `create_challenge`, `get_challenge`, `start_challenge`) que não revelam a resposta antes de ela ser enviada e medem o tempo no servidor. Funções internas (`_pick_options`, …) não são executáveis pelo cliente.
 
 ## Dados de exemplo
 
@@ -57,5 +59,5 @@ Frases reais só entram com `status = 'verified'`, fonte primária (`source_url`
 
 ## Ainda não feito (próximas etapas)
 - Curadoria das frases reais (candidatas entram como rascunho para revisão).
-- Duelo 1x1 e salas com amigos (2ª entrega).
+- Duelo ao vivo e salas com amigos.
 - Rate limit / anti-abuso nas RPCs e ranking.

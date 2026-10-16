@@ -30,6 +30,7 @@ export type Summary = {
   session_id: string;
   mode: GameMode;
   daily_day: string | null;
+  challenge_id: string | null;
   status: "playing" | "finished";
   score: number;
   correct: number;
@@ -60,4 +61,15 @@ export type Reveal = {
   };
 };
 
-export type GameMode = "solo" | "daily" | "shared";
+export type GameMode = "solo" | "daily" | "shared" | "challenge";
+
+/** Desafio público: nome e resultado de quem desafiou (sem as frases). */
+export type Challenge = {
+  id: string;
+  name: string | null;
+  mode: GameMode;
+  correct: number;
+  total_rounds: number;
+  best_streak: number;
+  results: RoundResult[];
+};
