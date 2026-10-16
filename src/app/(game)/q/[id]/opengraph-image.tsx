@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { Brand, Frame, QuoteMark, fonts } from "@/lib/card";
 import { getQuotePreview } from "@/lib/preview";
 
 export const alt = "Quem disse isso?";
@@ -13,23 +14,17 @@ export default async function Image({ params }: { params: Promise<{ id: string }
 
   return new ImageResponse(
     (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          background: "#0a0a0f",
-          color: "#f5f5f4",
-          padding: 72,
-        }}
-      >
-        <div style={{ display: "flex", fontSize: 40, fontWeight: 800, color: "#fbbf24" }}>Quem disse isso?</div>
-        <div style={{ display: "flex", fontSize, fontWeight: 700, lineHeight: 1.2 }}>{`“${text}”`}</div>
-        <div style={{ display: "flex", fontSize: 32, color: "#a1a1aa" }}>Toque para adivinhar quem foi.</div>
-      </div>
+      <Frame padding={64}>
+        <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
+          <QuoteMark size={72} />
+          <Brand size={44} />
+        </div>
+        <div style={{ display: "flex", flex: 1, alignItems: "center", fontSize, fontWeight: 800, lineHeight: 1.15 }}>
+          {text}
+        </div>
+        <div style={{ display: "flex", fontSize: 32, color: "rgba(255,255,255,0.65)" }}>Toque para adivinhar quem foi.</div>
+      </Frame>
     ),
-    size,
+    { ...size, fonts },
   );
 }

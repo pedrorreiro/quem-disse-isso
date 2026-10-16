@@ -91,7 +91,7 @@ export default function PersonEditor({ person, categories, onSaved, onCancel }: 
       <div className="flex flex-col gap-5">
         <h2 className="text-lg font-bold">{person ? `Editar ${person.name}` : "Nova pessoa"}</h2>
 
-        <div className="grid gap-4 sm:grid-cols-[1fr_200px_100px]">
+        <div className="grid gap-4 sm:grid-cols-[1fr_160px_160px_130px_80px]">
           <Field label="Nome">
             <input className={input} value={p.name ?? ""} onChange={(e) => set("name", e.target.value)} />
           </Field>
@@ -107,6 +107,22 @@ export default function PersonEditor({ person, categories, onSaved, onCancel }: 
                 <option key={c} value={c} />
               ))}
             </datalist>
+          </Field>
+          <Field label="Área (para as alternativas)">
+            <input
+              className={input}
+              list="categories"
+              value={p.area ?? ""}
+              placeholder={p.category || "igual à categoria"}
+              onChange={(e) => set("area", slugify(e.target.value) || null)}
+            />
+          </Field>
+          <Field label="Gênero">
+            <select className={input} value={p.gender ?? ""} onChange={(e) => set("gender", (e.target.value || null) as Draft["gender"])}>
+              <option value="">—</option>
+              <option value="m">Masculino</option>
+              <option value="f">Feminino</option>
+            </select>
           </Field>
           <Field label="País">
             <input

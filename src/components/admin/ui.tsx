@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ArrowUpRight } from "lucide-react";
 import type { PhotoStatus } from "@/lib/admin";
 
 export const input =
@@ -45,8 +46,9 @@ export function Avatar({ url, name, className = "" }: { url: string | null; name
 export function ExternalLink({ href, children }: { href?: string | null; children: ReactNode }) {
   if (!href) return null;
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="text-sm text-amber-300 underline underline-offset-2">
-      {children} ↗
+    <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 text-sm text-amber-300 underline underline-offset-2">
+      {children}
+      <ArrowUpRight className="size-3.5" aria-hidden />
     </a>
   );
 }

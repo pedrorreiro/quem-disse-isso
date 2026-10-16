@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { rpc } from "@/lib/api";
 
 type Credit = {
@@ -23,8 +24,9 @@ export default function Credits() {
 
   return (
     <div className="flex flex-col gap-6 py-8">
-      <Link href="/" className="text-sm text-white/50">
-        ← Início
+      <Link href="/" className="inline-flex items-center gap-1 text-sm text-white/50">
+        <ArrowLeft className="size-4" aria-hidden />
+        Início
       </Link>
       <h1 className="text-3xl font-black">Créditos das fotos</h1>
       {!credits ? (

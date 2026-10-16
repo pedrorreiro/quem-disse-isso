@@ -7,6 +7,8 @@ export type Person = {
   name: string;
   slug: string;
   category: string;
+  area: string | null;
+  gender: "m" | "f" | null;
   country: string | null;
   bio_short: string | null;
   wikidata_id: string | null;

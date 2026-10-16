@@ -3,13 +3,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
+import {
+  ArrowRight,
+  Check,
+  CircleCheck,
+  CircleX,
+  ExternalLink,
+  Flame,
+  Hourglass,
+  Quote,
+  SkipForward,
+  SquareSplitHorizontal,
+  TimerOff,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import OptionCard, { type CardState } from "./OptionCard";
 import Results from "./Results";
 import ShareButton from "./ShareButton";
 import { Confetti, CountUp, buzz } from "./fx";
 import {
   answerRound,
-  eliminateOption,
   friendlyError,
   nextRound,
   playJoker,
@@ -24,10 +38,10 @@ type Props = { mode: GameMode; category?: string; quoteId?: string };
 const btnPrimary = "btn-pop bg-lime text-ink";
 const btnGhost = "btn-pop bg-white/10 font-bold backdrop-blur";
 
-const JOKERS: { name: JokerName; label: string; icon: string }[] = [
-  { name: "fifty", label: "50/50", icon: "🌓" },
-  { name: "time", label: "+5s", icon: "⏱️" },
-  { name: "skip", label: "Pular", icon: "⏭️" },
+const JOKERS: { name: JokerName; label: string; icon: LucideIcon }[] = [
+  { name: "fifty", label: "50/50", icon: SquareSplitHorizontal },
+  { name: "time", label: "+5s", icon: Hourglass },
+  { name: "skip", label: "Pular", icon: SkipForward },
 ];
 
 // frases longas ganham fonte menor para caber sem rolar
@@ -57,14 +71,15 @@ export default function Game({ mode, category, quoteId }: Props) {
   const [totalSeconds, setTotalSeconds] = useState(20);
   const [deadline, setDeadline] = useState(0);
   const [now, setNow] = useState(0);
-  const [score, setScore] = useState(0);
+  // resultado de cada rodada (posição → acerto/erro), para as bolinhas e o contador de acertos
+  const [history, setHistory] = useState<Record<number, "correct" | "wrong" | "skipped">>({});
   const [streak, setStreak] = useState(0);
   const [reveal, setReveal] = useState<Reveal | null>(null);
+  const [picked, setPicked] = useState<string | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
 
   const sessionId = useRef<string | null>(null);
   const busy = useRef(false);
-  const autoElim = useRef(0);
   const started = useRef(false);
   const storageKey = `qdi:sid:${mode}:${category ?? ""}:${quoteId ?? ""}`;
 
@@ -89,12 +104,11 @@ export default function Game({ mode, category, quoteId }: Props) {
       setEliminated(r.eliminated);
       setJokers(r.jokers);
       setTotalSeconds(r.total_seconds);
-      setScore(r.score);
       setStreak(r.streak);
       setReveal(null);
+      setPicked(null);
       setNow(t);
       setDeadline(t + r.seconds_left * 1000);
-      autoElim.current = 0;
       setPhase("question");
     },
     [storageKey],
@@ -103,6 +117,7 @@ export default function Game({ mode, category, quoteId }: Props) {
   const begin = useCallback(
     async (fresh: boolean) => {
       setPhase("loading");
+      setHistory({});
       try {
         // No solo, recarregar a página retoma a partida em andamento (o relógio é do servidor).
         const saved = !fresh && mode === "solo" ? storage(storageKey) : null;
@@ -145,12 +160,13 @@ export default function Game({ mode, category, quoteId }: Props) {
     async (personId: string | null) => {
       if (!round || busy.current) return;
       busy.current = true;
+      setPicked(personId);
       setPhase("answering");
       try {
         const r = await answerRound(round.round_id, personId);
         busy.current = false;
         setReveal(r);
-        setScore(r.score);
+        setHistory((h) => ({ ...h, [round.position]: r.correct ? "correct" : "wrong" }));
         setStreak(r.streak);
         setPhase("reveal");
         buzz(r.correct ? 30 : [40, 40, 40]);
@@ -167,19 +183,6 @@ export default function Game({ mode, category, quoteId }: Props) {
     const id = setTimeout(() => void answer(null), Math.max(0, deadline - Date.now()));
     return () => clearTimeout(id);
   }, [phase, deadline, answer]);
-
-  // eliminação automática: uma opção errada some a cada terço do tempo (custa pontos)
-  useEffect(() => {
-    if (phase !== "question" || !round || busy.current) return;
-    const elapsed = 1 - remaining / totalSeconds;
-    const target = elapsed >= 2 / 3 ? 2 : elapsed >= 1 / 3 ? 1 : 0;
-    if (target <= autoElim.current) return;
-    autoElim.current = target;
-    if (eliminated.length >= 2) return;
-    eliminateOption(round.round_id)
-      .then(setEliminated)
-      .catch(() => {});
-  }, [phase, round, remaining, totalSeconds, eliminated.length]);
 
   // desktop: 1–4 escolhem a carta, Enter avança
   useEffect(() => {
@@ -204,6 +207,7 @@ export default function Game({ mode, category, quoteId }: Props) {
       const r = await playJoker(round.round_id, name);
       setJokers(r.jokers);
       if (name === "skip") {
+        setHistory((h) => ({ ...h, [round.position]: "skipped" }));
         await loadRound(sessionId.current!);
         return;
       }
@@ -279,7 +283,7 @@ export default function Game({ mode, category, quoteId }: Props) {
   const revealed = phase === "reveal" && reveal;
   const fraction = revealed ? 0 : remaining / totalSeconds;
   const lowTime = fraction < 0.25;
-  const multiplier = 1 + Math.min(streak, 4) * 0.25;
+  const hits = Object.values(history).filter((v) => v === "correct").length;
   const words = round.quote_text.split(/\s+/);
 
   function cardState(id: string): CardState {
@@ -288,18 +292,48 @@ export default function Game({ mode, category, quoteId }: Props) {
       if (id === reveal.chosen_person_id) return "wrong";
       return "dimmed";
     }
-    return eliminated.includes(id) ? "eliminated" : "idle";
+    if (eliminated.includes(id)) return "eliminated";
+    if (phase === "answering" && picked) return id === picked ? "picked" : "dimmed";
+    return "idle";
   }
+
+  const verdict = revealed
+    ? reveal.timed_out
+      ? { label: "Tempo esgotado", Icon: TimerOff, cls: "bg-pink text-white" }
+      : reveal.correct
+        ? { label: "Correto", Icon: CircleCheck, cls: "bg-lime text-ink" }
+        : { label: "Errado", Icon: CircleX, cls: "bg-pink text-white" }
+    : null;
 
   return (
     <div className="flex flex-1 flex-col gap-4 py-4 md:justify-center md:py-10">
+      {/* resultado da rodada: aviso no topo da tela */}
+      <div className="pointer-events-none fixed inset-x-0 top-3 z-40 flex justify-center">
+      <AnimatePresence>
+        {revealed && verdict && (
+          <motion.div
+            key={reveal.quote_id}
+            role="status"
+            initial={{ y: -90, opacity: 0, rotate: -4 }}
+            animate={{ y: 0, opacity: 1, rotate: -1.5 }}
+            exit={{ y: -90, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 420, damping: 20 }}
+            className={`flex items-center gap-2 rounded-2xl px-5 py-3 font-display text-xl font-black uppercase shadow-[0_6px_0_0_rgb(0_0_0/0.5)] ${verdict.cls}`}
+          >
+            <verdict.Icon className="size-6" strokeWidth={3} aria-hidden />
+            {verdict.label}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      </div>
+
       <header className="flex items-center justify-between gap-3">
         <Link
           href="/"
           className="grid size-10 place-items-center rounded-full bg-white/10 text-white/70 transition hover:bg-white/20"
           aria-label="Voltar ao início"
         >
-          ✕
+          <X className="size-5" />
         </Link>
 
         {/* progresso: uma bolinha por rodada */}
@@ -309,7 +343,15 @@ export default function Game({ mode, category, quoteId }: Props) {
               key={i}
               layout
               className={`h-2 rounded-full ${
-                i + 1 < round.position ? "bg-white/60" : i + 1 === round.position ? "bg-lime" : "bg-white/15"
+                history[i + 1] === "correct"
+                  ? "bg-lime"
+                  : history[i + 1] === "wrong"
+                    ? "bg-pink"
+                    : i + 1 === round.position
+                      ? "bg-white"
+                      : i + 1 < round.position
+                        ? "bg-white/50"
+                        : "bg-white/15"
               }`}
               animate={{ width: i + 1 === round.position ? 22 : 8 }}
             />
@@ -325,14 +367,20 @@ export default function Game({ mode, category, quoteId }: Props) {
                 animate={{ scale: 1, rotate: -6 }}
                 exit={{ scale: 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                className="rounded-full bg-pink px-2.5 py-1 font-display text-xs font-black text-white shadow-[0_3px_0_0_rgb(0_0_0/0.5)]"
+                className="flex items-center gap-0.5 rounded-full bg-pink px-2.5 py-1 font-display text-xs font-black text-white shadow-[0_3px_0_0_rgb(0_0_0/0.5)]"
+                aria-label={`${streak} acertos seguidos`}
               >
-                🔥 x{multiplier.toFixed(2).replace(/\.?0+$/, "")}
+                <Flame className="size-3.5 fill-white" aria-hidden />
+                {streak}
               </motion.span>
             )}
           </AnimatePresence>
-          <span className="rounded-full bg-white/10 px-3 py-1 font-display text-lg font-black tabular-nums text-lime">
-            <CountUp value={score} />
+          <span
+            className="flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 font-display text-lg font-black tabular-nums text-lime"
+            aria-label={`${hits} acertos`}
+          >
+            <Check className="size-4" strokeWidth={3.5} aria-hidden />
+            <CountUp value={hits} />
           </span>
         </div>
       </header>
@@ -369,9 +417,9 @@ export default function Game({ mode, category, quoteId }: Props) {
               initial={{ scale: 0, rotate: -40 }}
               animate={{ scale: 1, rotate: -10 }}
               transition={{ type: "spring", stiffness: 400, damping: 12, delay: 0.1 }}
-              className="absolute -left-2 -top-4 grid size-12 place-items-center rounded-2xl bg-pink font-display text-4xl font-black leading-none text-white shadow-[0_4px_0_0_rgb(0_0_0/0.5)]"
+              className="absolute -left-2 -top-4 grid size-12 place-items-center rounded-2xl bg-pink text-white shadow-[0_4px_0_0_rgb(0_0_0/0.5)]"
             >
-              “
+              <Quote className="size-6 fill-white" />
             </motion.span>
             <p className={`font-display font-extrabold leading-[1.15] tracking-tight ${quoteSize(round.quote_text)}`}>
               <span className="sr-only">{round.quote_text}</span>
@@ -406,105 +454,123 @@ export default function Game({ mode, category, quoteId }: Props) {
         </motion.div>
       </AnimatePresence>
 
-      {phase !== "reveal" && (
-        <div className="flex justify-center gap-2">
-          {JOKERS.filter(({ name }) => name in jokers).map(({ name, label, icon }) => (
-            <motion.button
-              key={name}
-              type="button"
-              whileTap={{ scale: 0.9, rotate: -4 }}
-              disabled={phase !== "question" || (jokers[name] ?? 0) < 1}
-              onClick={() => void triggerJoker(name)}
-              className="btn-pop flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-sm backdrop-blur"
-            >
-              <span aria-hidden>{icon}</span>
-              {label}
-              <span className="grid size-5 place-items-center rounded-full bg-white/15 text-xs">{jokers[name] ?? 0}</span>
-            </motion.button>
-          ))}
-        </div>
-      )}
-
       {revealed && reveal.correct && <Confetti key={reveal.quote_id} />}
 
+      {/* curingas (somem na revelação) */}
+      <AnimatePresence initial={false}>
+        {!revealed && (
+          <motion.div key="jokers" exit={{ opacity: 0 }} className="flex justify-center gap-2">
+            {JOKERS.filter(({ name }) => name in jokers).map(({ name, label, icon: Icon }) => (
+              <motion.button
+                key={name}
+                type="button"
+                whileTap={{ scale: 0.9, rotate: -4 }}
+                disabled={phase !== "question" || (jokers[name] ?? 0) < 1}
+                onClick={() => void triggerJoker(name)}
+                className="btn-pop flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-sm backdrop-blur"
+              >
+                <Icon className="size-4" aria-hidden />
+                {label}
+                <span className="grid size-5 place-items-center rounded-full bg-white/15 text-xs">{jokers[name] ?? 0}</span>
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* revelação: painel por cima de tudo, sem precisar rolar a tela */}
       <AnimatePresence>
         {revealed && (
-          <motion.section
-            key={reveal.quote_id}
-            initial={{ y: 80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 300, damping: 26 }}
-            className={`mt-auto flex flex-col gap-3 rounded-[2rem] p-4 ring-2 backdrop-blur-md md:mt-2 md:p-6 ${
-              reveal.correct ? "bg-lime/10 ring-lime/60" : "bg-pink/10 ring-pink/60"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <motion.h2
-                initial={{ scale: 0.6, rotate: -6 }}
-                animate={{ scale: 1, rotate: -2 }}
-                transition={{ type: "spring", stiffness: 500, damping: 14, delay: 0.1 }}
-                className={`rounded-xl px-3 py-1 font-display text-xl font-black uppercase ${
-                  reveal.correct ? "bg-lime text-ink" : "bg-pink text-white"
-                }`}
-              >
-                {reveal.timed_out ? "Tempo esgotado" : reveal.correct ? "Correto" : "Errado"}
-              </motion.h2>
-              {reveal.correct && (
-                <motion.span
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.25 }}
-                  className="font-display text-2xl font-black text-lime"
-                >
-                  +{reveal.points}
-                  {reveal.multiplier > 1 && <span className="ml-1 text-sm">x{reveal.multiplier}</span>}
-                </motion.span>
-              )}
-            </div>
-            <p>
-              <span className="font-display text-lg font-bold">{reveal.person.name}</span>
-              {(reveal.quote.context || reveal.quote.said_on) && (
-                <span className="text-sm text-white/60">
-                  {" "}
-                  — {[reveal.quote.context, reveal.quote.said_on?.slice(0, 4)].filter(Boolean).join(", ")}
-                </span>
-              )}
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <a href={reveal.quote.source_url} target="_blank" rel="noopener noreferrer" className={`${btnGhost} text-sm`}>
-                Ver fonte{reveal.quote.source_timestamp ? ` (${reveal.quote.source_timestamp})` : ""} ↗
-              </a>
-              <ShareButton
-                label="Compartilhar"
-                className={`${btnGhost} text-sm`}
-                getData={() => ({
-                  title: "Quem Disse Isso?",
-                  text: `Quem disse isso? “${reveal.quote.text}”`,
-                  url: `${window.location.origin}/q/${reveal.quote_id}`,
-                })}
-              />
-            </div>
-            {reveal.person.image_credit && (
-              <p className="text-center text-xs text-white/40">
-                Foto: {reveal.person.image_credit}
-                {reveal.person.image_license && ` · ${reveal.person.image_license}`}
-              </p>
-            )}
-            {reveal.quote.archive_url && (
-              <a
-                href={reveal.quote.archive_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-center text-xs text-white/40 underline"
-              >
-                Fonte arquivada
-              </a>
-            )}
-            <button type="button" onClick={() => void advance()} className={`${btnPrimary} text-lg`}>
-              {reveal.finished ? "Ver resultado" : "Próxima →"}
-              <kbd className="ml-2 hidden text-xs font-normal opacity-60 md:inline">Enter</kbd>
-            </button>
-          </motion.section>
+          <>
+            <motion.div
+              key="shade"
+              aria-hidden
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-30 bg-ink/50"
+            />
+            <motion.section
+              key="sheet"
+              aria-label="Resposta"
+              initial={{ y: "110%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "110%" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30, delay: 0.25 }}
+              className="fixed inset-x-0 bottom-0 z-30 px-2 md:px-8"
+            >
+              <div className="mx-auto flex max-w-md flex-col gap-4 rounded-t-[2rem] bg-[#1d1230]/95 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_-10px_40px_rgb(0_0_0/0.5)] ring-1 ring-white/10 backdrop-blur-xl md:max-w-3xl md:p-6">
+                <div className="mx-auto h-1.5 w-10 rounded-full bg-white/20" aria-hidden />
+                <div className="flex items-center gap-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={reveal.person.image_url}
+                    alt=""
+                    className="size-16 shrink-0 rounded-2xl object-cover ring-4 ring-lime"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-widest text-white/50">Quem disse</p>
+                    <p className="font-display text-2xl font-black leading-tight">{reveal.person.name}</p>
+                    {(reveal.quote.context || reveal.quote.said_on) && (
+                      <p className="line-clamp-2 text-sm text-white/60">
+                        {[reveal.quote.context, reveal.quote.said_on?.slice(0, 4)].filter(Boolean).join(", ")}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <a
+                    href={reveal.quote.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${btnGhost} inline-flex items-center gap-2 px-4 text-sm`}
+                  >
+                    <ExternalLink className="size-4" aria-hidden />
+                    Fonte{reveal.quote.source_timestamp ? ` ${reveal.quote.source_timestamp}` : ""}
+                  </a>
+                  <ShareButton
+                    compact
+                    label="Compartilhar"
+                    className={`${btnGhost} px-4 text-sm`}
+                    image={{ url: `/api/card/frase/${reveal.quote_id}`, name: "quem-disse-isso.png" }}
+                    getData={() => ({
+                      title: "Quem Disse Isso?",
+                      text: "Quem disse isso? Duvido você acertar:",
+                      url: `${window.location.origin}/q/${reveal.quote_id}`,
+                    })}
+                  />
+                  <button
+                    type="button"
+                    autoFocus
+                    onClick={() => void advance()}
+                    className={`${btnPrimary} inline-flex flex-1 items-center justify-center gap-2 text-lg`}
+                  >
+                    {reveal.finished ? "Resultado" : "Próxima"}
+                    <ArrowRight className="size-5" strokeWidth={3} aria-hidden />
+                    <kbd className="hidden text-xs font-normal opacity-60 md:inline">Enter</kbd>
+                  </button>
+                </div>
+                {(reveal.person.image_credit || reveal.quote.archive_url) && (
+                  <p className="text-center text-[11px] text-white/35">
+                    {reveal.person.image_credit && (
+                      <>
+                        Foto: {reveal.person.image_credit}
+                        {reveal.person.image_license && ` · ${reveal.person.image_license}`}
+                      </>
+                    )}
+                    {reveal.quote.archive_url && (
+                      <>
+                        {reveal.person.image_credit && " · "}
+                        <a href={reveal.quote.archive_url} target="_blank" rel="noopener noreferrer" className="underline">
+                          Fonte arquivada
+                        </a>
+                      </>
+                    )}
+                  </p>
+                )}
+              </div>
+            </motion.section>
+          </>
         )}
       </AnimatePresence>
     </div>

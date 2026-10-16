@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import {
   adminPeople,
   adminQuoteQueue,
@@ -71,10 +72,12 @@ export default function QuoteReview({ onChanged }: { onChanged: () => void }) {
         </span>
         <div className="flex gap-2">
           <button type="button" className={btnGhost} disabled={i === 0} onClick={() => setIndex(i - 1)}>
-            ← Anterior
+            <ArrowLeft className="mr-1 inline size-4" aria-hidden />
+            Anterior
           </button>
           <button type="button" className={btnGhost} disabled={i === queue.length - 1} onClick={() => setIndex(i + 1)}>
-            Pular →
+            Pular
+            <ArrowRight className="ml-1 inline size-4" aria-hidden />
           </button>
         </div>
       </div>

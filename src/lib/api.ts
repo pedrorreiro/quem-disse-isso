@@ -22,9 +22,6 @@ export const nextRound = (sessionId: string) =>
 export const answerRound = (roundId: string, personId: string | null) =>
   rpc<Reveal>("answer_round", { p_round_id: roundId, p_person_id: personId });
 
-export const eliminateOption = (roundId: string) =>
-  rpc<string[]>("eliminate_option", { p_round_id: roundId });
-
 export const playJoker = (roundId: string, joker: JokerName) =>
   rpc<{ jokers: Jokers; eliminated: string[]; total_seconds: number; skipped: boolean }>("use_joker", {
     p_round_id: roundId,
