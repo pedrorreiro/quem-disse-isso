@@ -21,8 +21,19 @@
   --color-grape: #7c3aed;
 }
 
+/* Modo polêmica: a mesma interface com paleta quente. As cores do jogo são variáveis, então tudo que usa
+   lime/pink/cyan/grape muda junto (botões, título, fundo). */
+:root[data-mode="polemica"] {
+  --background: #160509;
+  --color-lime: #ff6b2c;
+  --color-pink: #ff2d55;
+  --color-cyan: #ffb627;
+  --color-grape: #a3123a;
+}
+
 body {
   background: var(--background);
+  transition: background-color 0.4s ease;
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
@@ -95,9 +106,9 @@ body {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(closest-side, rgb(124 58 237 / 0.4), transparent) -40vmax -35vmax / 100vmax 100vmax no-repeat,
-    radial-gradient(closest-side, rgb(255 79 184 / 0.35), transparent) right -45vmax top 10vh / 90vmax 90vmax no-repeat,
-    radial-gradient(closest-side, rgb(62 230 255 / 0.2), transparent) left -10vmax bottom -40vmax / 85vmax 85vmax no-repeat;
+    radial-gradient(closest-side, color-mix(in srgb, var(--color-grape) 40%, transparent), transparent) -40vmax -35vmax / 100vmax 100vmax no-repeat,
+    radial-gradient(closest-side, color-mix(in srgb, var(--color-pink) 35%, transparent), transparent) right -45vmax top 10vh / 90vmax 90vmax no-repeat,
+    radial-gradient(closest-side, color-mix(in srgb, var(--color-cyan) 20%, transparent), transparent) left -10vmax bottom -40vmax / 85vmax 85vmax no-repeat;
 }
 
 /* Entradas em CSS puro (rodam fora do JS): palavras da frase e confete. */

@@ -504,7 +504,7 @@ export default function Game({ mode, category, quoteId, challengeId, kind: kindP
               transition={{ type: "spring", stiffness: 400, damping: 12, delay: 0.1 }}
               className="absolute -left-2 -top-4 grid size-12 place-items-center rounded-2xl bg-pink text-white shadow-[0_4px_0_0_rgb(0_0_0/0.5)]"
             >
-              <Quote className="size-6 fill-white" />
+              {kind === "polemica" ? <Flame className="size-6 fill-white" /> : <Quote className="size-6 fill-white" />}
             </motion.span>
             {round.year && (
               <motion.span
