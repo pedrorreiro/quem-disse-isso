@@ -8,7 +8,8 @@ export const KIND_ADJ: Record<Kind, string> = { iconica: "icônicas", polemica: 
 
 export const asKind = (v: unknown): Kind | undefined => (v === "iconica" || v === "polemica" ? v : undefined);
 
-const KEY = "qdi:tipo";
+// chave nova junto com o interruptor: quem tinha escolhido Polêmicas no seletor antigo volta ao padrão
+const KEY = "qdi:modo";
 // com o storage bloqueado, a escolha vale só nesta visita
 let memory: Kind | undefined;
 const listeners = new Set<() => void>();
