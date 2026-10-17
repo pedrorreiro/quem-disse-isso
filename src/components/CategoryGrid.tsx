@@ -38,7 +38,7 @@ const ICON: Record<string, LucideIcon> = {
 };
 
 // cores das capas, em rodízio; a primeira (lime) fica para "Tudo misturado"
-const TILE = ["bg-pink text-white", "bg-cyan text-ink", "bg-grape text-white", "bg-white/10 text-white backdrop-blur"];
+const TILE = ["bg-pink text-white", "bg-cyan text-ink", "bg-grape text-white", "bg-white/10 text-white md:backdrop-blur"];
 
 function Tile({
   href,
@@ -105,7 +105,7 @@ function Tile({
           <span className="absolute right-3 top-3 flex -space-x-3" aria-hidden>
             {faces.map((src) => (
               // eslint-disable-next-line @next/next/no-img-element
-              <img key={src} src={src} alt="" className="size-9 rounded-full object-cover ring-2 ring-ink/40" />
+              <img key={src} src={src} alt="" decoding="async" className="size-9 rounded-full object-cover ring-2 ring-ink/40" />
             ))}
           </span>
         )}
@@ -137,7 +137,7 @@ export default function CategoryGrid() {
   return (
     <div className="flex flex-1 flex-col gap-6 py-6 md:py-10">
       <header className="flex items-center gap-3">
-        <Link href="/" className="btn-pop grid size-11 shrink-0 place-items-center rounded-2xl p-0! bg-white/10 backdrop-blur" aria-label="Voltar ao início">
+        <Link href="/" className="btn-pop grid size-11 shrink-0 place-items-center rounded-2xl p-0! bg-white/10 md:backdrop-blur" aria-label="Voltar ao início">
           <ArrowLeft className="size-5" aria-hidden />
         </Link>
         <div>

@@ -7,7 +7,7 @@ import ShareButton from "./ShareButton";
 import { quoteDetail } from "@/lib/share";
 import type { QuotePublic } from "@/lib/preview";
 
-const btnGhost = "btn-pop bg-white/10 font-bold backdrop-blur";
+const btnGhost = "btn-pop bg-white/10 font-bold md:backdrop-blur";
 
 /** Link de frase compartilhada: a frase já revelada, com quem disse, fonte e chamada para jogar. */
 export default function QuoteShared({ quote }: { quote: QuotePublic | null }) {
@@ -31,7 +31,7 @@ export default function QuoteShared({ quote }: { quote: QuotePublic | null }) {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 260, damping: 22 }}
-        className="relative rounded-[2rem] bg-white/[0.07] px-6 pb-6 pt-10 ring-1 ring-white/10 backdrop-blur md:px-10 md:pb-8 md:pt-12"
+        className="relative rounded-[2rem] bg-white/[0.07] px-6 pb-6 pt-10 ring-1 ring-white/10 md:backdrop-blur md:px-10 md:pb-8 md:pt-12"
       >
         <span
           className="absolute -top-6 left-5 grid size-12 -rotate-8 place-items-center rounded-2xl bg-pink text-white shadow-[0_4px_0_0_rgb(0_0_0/0.5)]"

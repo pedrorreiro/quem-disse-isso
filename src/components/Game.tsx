@@ -439,10 +439,9 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
         {/* progresso: uma bolinha por rodada */}
         <div className="flex flex-1 justify-center gap-1.5" aria-label={`Rodada ${round.position} de ${round.total_rounds}`}>
           {Array.from({ length: round.total_rounds }, (_, i) => (
-            <motion.span
+            <span
               key={i}
-              layout
-              className={`h-2 rounded-full ${
+              className={`h-2 rounded-full transition-[width,background-color] duration-300 ${
                 history[i + 1] === "correct"
                   ? "bg-lime"
                   : history[i + 1] === "wrong"
@@ -452,8 +451,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
                       : i + 1 < round.position
                         ? "bg-white/50"
                         : "bg-white/15"
-              }`}
-              animate={{ width: i + 1 === round.position ? 22 : 8 }}
+              } ${i + 1 === round.position ? "w-[22px]" : "w-2"}`}
             />
           ))}
         </div>
@@ -487,12 +485,11 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
 
       <TimeBar deadline={deadline} totalSeconds={totalSeconds} running={phase === "question"} stopped={!!revealed} />
 
-      <AnimatePresence mode="wait">
-        <motion.div
+      {/* sem animação de saída: a rodada nova entra no mesmo toque do "Próxima", sem esperar a velha sair */}
+      <motion.div
           key={round.round_id}
           initial={{ opacity: 0, x: 60 }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -60, transition: { duration: 0.08 } }}
           transition={{ type: "spring", stiffness: 260, damping: 26 }}
           className="flex flex-col gap-4"
         >
@@ -509,16 +506,11 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
             <p className={`font-display font-extrabold leading-[1.15] tracking-tight ${quoteSize(round.quote_text)}`}>
               <span className="sr-only">{round.quote_text}</span>
               <span aria-hidden>
+                {/* entrada em CSS: dezenas de palavras animadas pelo JS travavam a troca de rodada no celular */}
                 {words.map((w, i) => (
-                  <motion.span
-                    key={i}
-                    className="inline-block"
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.25, delay: Math.min(i * 0.025, 0.45) }}
-                  >
+                  <span key={i} className="word-in" style={{ animationDelay: `${Math.min(i * 0.025, 0.45)}s` }}>
                     {w}&nbsp;
-                  </motion.span>
+                  </span>
                 ))}
               </span>
             </p>
@@ -536,10 +528,9 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
               />
             ))}
           </div>
-        </motion.div>
-      </AnimatePresence>
+      </motion.div>
 
-      {revealed && reveal.correct && <Confetti key={round.round_id} />}
+      {revealed && reveal.correct && <Confetti key={`confete-${round.round_id}`} />}
 
       {/* revelação: painel por cima de tudo, sem precisar rolar a tela */}
       <AnimatePresence>
@@ -569,6 +560,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
                   <img
                     src={reveal.person.image_url}
                     alt=""
+                    decoding="async"
                     className="size-16 shrink-0 rounded-2xl object-cover ring-4 ring-lime"
                   />
                   <div className="min-w-0">

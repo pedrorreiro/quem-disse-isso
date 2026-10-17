@@ -13,7 +13,7 @@ import { categoryLabel, resultCode } from "@/lib/share";
 import type { Challenge, Summary } from "@/lib/types";
 
 const btnPrimary = "btn-pop bg-lime text-ink text-lg";
-const btnGhost = "btn-pop bg-white/10 font-bold backdrop-blur";
+const btnGhost = "btn-pop bg-white/10 font-bold md:backdrop-blur";
 
 const pop = (delay: number) => ({
   initial: { opacity: 0, y: 24, scale: 0.9 },
@@ -40,7 +40,7 @@ function Versus({ summary, rival }: { summary: Summary; rival: Challenge }) {
   const verdict =
     summary.correct > rival.correct ? "Você venceu" : summary.correct < rival.correct ? `${who} venceu` : "Empate";
   return (
-    <motion.div {...pop(0.4)} className="rounded-3xl bg-white/[0.07] p-4 ring-1 ring-white/10 backdrop-blur md:mx-auto md:w-full md:max-w-md">
+    <motion.div {...pop(0.4)} className="rounded-3xl bg-white/[0.07] p-4 ring-1 ring-white/10 md:backdrop-blur md:mx-auto md:w-full md:max-w-md">
       <p className="text-center text-xs font-bold uppercase tracking-widest text-white/50">{verdict}</p>
       <div className="mt-2 flex items-center justify-center gap-4 font-display font-black">
         <div className="flex flex-col items-center">
@@ -63,7 +63,7 @@ function Discovered({ seen, total, category }: { seen: number; total: number; ca
   const where = category ? ` de ${categoryLabel(category)}` : "";
   if (seen >= total) {
     return (
-      <motion.div {...pop(0.7)} className="flex items-start gap-3 rounded-3xl bg-grape/40 p-4 ring-1 ring-white/10 backdrop-blur md:mx-auto md:w-full md:max-w-md">
+      <motion.div {...pop(0.7)} className="flex items-start gap-3 rounded-3xl bg-grape/40 p-4 ring-1 ring-white/10 md:backdrop-blur md:mx-auto md:w-full md:max-w-md">
         <PartyPopper className="mt-0.5 size-6 shrink-0 text-lime" aria-hidden />
         <p className="text-sm">
           <span className="block font-display font-black">
@@ -163,11 +163,11 @@ export default function Results({
         <Versus summary={summary} rival={rival} />
       ) : (
         <dl className="grid grid-cols-2 gap-3 text-center md:mx-auto md:w-full md:max-w-md">
-          <motion.div {...pop(0.5)} className="-rotate-1 rounded-3xl bg-white/[0.07] p-4 ring-1 ring-white/10 backdrop-blur">
+          <motion.div {...pop(0.5)} className="-rotate-1 rounded-3xl bg-white/[0.07] p-4 ring-1 ring-white/10 md:backdrop-blur">
             <dt className="text-xs font-bold uppercase tracking-wide text-white/50">Aproveitamento</dt>
             <dd className="font-display text-3xl font-black">{pct}%</dd>
           </motion.div>
-          <motion.div {...pop(0.6)} className="rotate-1 rounded-3xl bg-white/[0.07] p-4 ring-1 ring-white/10 backdrop-blur">
+          <motion.div {...pop(0.6)} className="rotate-1 rounded-3xl bg-white/[0.07] p-4 ring-1 ring-white/10 md:backdrop-blur">
             <dt className="text-xs font-bold uppercase tracking-wide text-white/50">Maior sequência</dt>
             <dd className="flex items-center justify-center gap-1 font-display text-3xl font-black">
               <Flame className="size-7 fill-pink text-pink" aria-hidden />

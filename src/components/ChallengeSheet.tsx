@@ -64,7 +64,7 @@ export default function ChallengeSheet({ open, onClose, sessionId, challengeId, 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-ink/60 backdrop-blur-sm"
+            className="fixed inset-0 z-40 bg-ink/60 md:backdrop-blur-sm"
             aria-hidden
           />
           <motion.section
@@ -78,7 +78,7 @@ export default function ChallengeSheet({ open, onClose, sessionId, challengeId, 
             transition={{ type: "spring", stiffness: 320, damping: 30 }}
             className="fixed inset-x-0 bottom-0 z-50 px-2 md:px-8"
           >
-            <div className="mx-auto flex max-w-md flex-col gap-4 rounded-t-[2rem] bg-[#1d1230]/95 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_-10px_40px_rgb(0_0_0/0.5)] ring-1 ring-white/10 backdrop-blur-xl md:p-6">
+            <div className="mx-auto flex max-w-md flex-col gap-4 rounded-t-[2rem] bg-[#1d1230]/95 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_-10px_40px_rgb(0_0_0/0.5)] ring-1 ring-white/10 md:backdrop-blur-xl md:p-6">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 id="challenge-title" className="flex items-center gap-2 font-display text-2xl font-black">

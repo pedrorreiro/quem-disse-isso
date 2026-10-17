@@ -65,6 +65,7 @@ export default function OptionCard({ option, index, state, disabled, onPick }: P
       <img
         src={option.image_url}
         alt=""
+        decoding="async"
         className={`aspect-[4/3] w-full object-cover ${state === "eliminated" ? "grayscale" : ""}`}
         draggable={false}
       />

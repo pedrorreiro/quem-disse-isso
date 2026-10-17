@@ -89,14 +89,68 @@ body {
   }
 }
 
-/* No celular o fundo fica parado: manchas desfocadas animadas e a mistura do granulado
-   ocupam a placa de vídeo a cada quadro e atrasam o toque. */
-@media (max-width: 767px) {
-  .blob {
+/* Fundo do celular: os mesmos tons em degradês, sem filter blur nem granulado. Manchas de 60vmax
+   desfocadas em 70px são texturas enormes que a placa de vídeo recompõe a cada quadro. */
+.backdrop-flat {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(closest-side, rgb(124 58 237 / 0.4), transparent) -40vmax -35vmax / 100vmax 100vmax no-repeat,
+    radial-gradient(closest-side, rgb(255 79 184 / 0.35), transparent) right -45vmax top 10vh / 90vmax 90vmax no-repeat,
+    radial-gradient(closest-side, rgb(62 230 255 / 0.2), transparent) left -10vmax bottom -40vmax / 85vmax 85vmax no-repeat;
+}
+
+/* Entradas em CSS puro (rodam fora do JS): palavras da frase e confete. */
+@keyframes word-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+}
+.word-in {
+  display: inline-block;
+  animation: word-in 0.25s ease-out both;
+}
+
+/* letras do título: sobem girando e passam um pouco do ponto, como a mola fazia */
+@keyframes letter-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 40px, 0) rotate(var(--tilt, 0deg));
+  }
+}
+.letter-in {
+  display: inline-block;
+  animation: letter-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes confetti {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0) scale(0.4);
+  }
+  70% {
+    opacity: 1;
+    transform: translate3d(var(--x), var(--y), 0) rotate(calc(var(--r) * 0.7)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--x), calc(var(--y) + 260px), 0) rotate(var(--r)) scale(1);
+  }
+}
+.confetti-bit {
+  position: absolute;
+  border-radius: 2px;
+  animation: confetti 1.3s cubic-bezier(0.15, 0.6, 0.35, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word-in,
+  .letter-in,
+  .confetti-bit {
     animation: none;
   }
-  .grain {
-    mix-blend-mode: normal;
-    opacity: 0.04;
+  .confetti-bit {
+    display: none;
   }
 }

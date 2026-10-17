@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { CalendarDays, LayoutGrid, Play, Quote } from "lucide-react";
@@ -7,16 +8,15 @@ import { CalendarDays, LayoutGrid, Play, Quote } from "lucide-react";
 function Letters({ text, className, delay }: { text: string; className?: string; delay: number }) {
   return (
     <span className={`inline-block ${className ?? ""}`} aria-hidden>
+      {/* uma animação CSS por letra (roda fora do JS, não disputa o toque com o React) */}
       {Array.from(text).map((ch, i) => (
-        <motion.span
+        <span
           key={i}
-          className="inline-block"
-          initial={{ opacity: 0, y: 40, rotate: (i % 2 ? 1 : -1) * 20 }}
-          animate={{ opacity: 1, y: 0, rotate: 0 }}
-          transition={{ type: "spring", stiffness: 420, damping: 18, delay: delay + i * 0.04 }}
+          className="letter-in"
+          style={{ animationDelay: `${delay + i * 0.04}s`, "--tilt": `${(i % 2 ? 1 : -1) * 20}deg` } as CSSProperties}
         >
-          {ch === " " ? " " : ch}
-        </motion.span>
+          {ch === " " ? "\u00a0" : ch}
+        </span>
       ))}
     </span>
   );
@@ -61,11 +61,11 @@ export default function Hero() {
           Jogar
         </Link>
         <div className="grid grid-cols-2 gap-3">
-          <Link href="/categorias" className="btn-pop flex items-center justify-center gap-1.5 whitespace-nowrap bg-white/10 px-2 py-4 font-display text-base backdrop-blur sm:gap-2 sm:px-3 sm:text-lg">
+          <Link href="/categorias" className="btn-pop flex items-center justify-center gap-1.5 whitespace-nowrap bg-white/10 px-2 py-4 font-display text-base md:backdrop-blur sm:gap-2 sm:px-3 sm:text-lg">
             <LayoutGrid className="size-5 shrink-0" aria-hidden />
             Categorias
           </Link>
-          <Link href="/diario" className="btn-pop flex items-center justify-center gap-1.5 whitespace-nowrap bg-white/10 px-2 py-4 font-display text-base backdrop-blur sm:gap-2 sm:px-3 sm:text-lg">
+          <Link href="/diario" className="btn-pop flex items-center justify-center gap-1.5 whitespace-nowrap bg-white/10 px-2 py-4 font-display text-base md:backdrop-blur sm:gap-2 sm:px-3 sm:text-lg">
             <CalendarDays className="size-5 shrink-0" aria-hidden />
             Desafio do dia
           </Link>
