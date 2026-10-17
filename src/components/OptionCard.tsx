@@ -2,7 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import { motion, type TargetAndTransition } from "motion/react";
-import { Check, X } from "lucide-react";
+import { Check, LoaderCircle, X } from "lucide-react";
 import type { Option } from "@/lib/types";
 
 export type CardState = "idle" | "picked" | "eliminated" | "correct" | "wrong" | "dimmed";
@@ -47,7 +47,7 @@ export default function OptionCard({ option, index, state, disabled, onPick }: P
       onClick={() => onPick(option.id)}
       initial={{ opacity: 0, y: 48, rotate: tilt * 3, scale: 0.85 }}
       animate={{ y: 0, rotate: state === "correct" ? 0 : tilt, ...ANIM[state] }}
-      transition={{ type: "spring", stiffness: 380, damping: 22, delay: entered ? 0 : 0.25 + index * 0.07 }}
+      transition={{ type: "spring", stiffness: 380, damping: 22, delay: entered ? 0 : 0.08 + index * 0.05 }}
       onAnimationComplete={() => setEntered(true)}
       whileTap={state === "idle" ? { scale: 0.95 } : undefined}
       className="group relative flex rounded-3xl text-left"
@@ -70,6 +70,13 @@ export default function OptionCard({ option, index, state, disabled, onPick }: P
         {option.name}
         <kbd className="hidden rounded-md bg-white/10 px-1.5 font-sans text-xs font-normal text-white/50 md:inline">{index + 1}</kbd>
       </span>
+
+      {/* sem a conferência local, a escolha espera o servidor: o spinner mostra que o toque pegou */}
+      {state === "picked" && (
+        <span className="absolute inset-0 grid place-items-center bg-ink/40" role="status" aria-label="Conferindo resposta">
+          <LoaderCircle className="size-10 animate-spin text-white drop-shadow" strokeWidth={3} aria-hidden />
+        </span>
+      )}
 
       {(state === "correct" || state === "wrong") && (
         <motion.span

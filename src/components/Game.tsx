@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, Check, CircleCheck, CircleX, ExternalLink, Flame, Quote, TimerOff, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowRight, Check, CircleCheck, CircleX, ExternalLink, Flame, LoaderCircle, Quote, TimerOff, Volume2, VolumeX, X } from "lucide-react";
 import OptionCard, { type CardState } from "./OptionCard";
 import Results from "./Results";
 import ShareButton from "./ShareButton";
 import { Confetti, CountUp, buzz, setSoundOn, sfx, soundOn } from "./fx";
 import { answerRound, friendlyError, nextRound, startGame } from "@/lib/api";
 import { quoteDetail } from "@/lib/share";
+import { sha256Hex } from "@/lib/sha256";
 import type { GameMode, Reveal, Round, Summary } from "@/lib/types";
 
 type Phase = "loading" | "question" | "answering" | "reveal" | "finished" | "error";
@@ -58,16 +59,10 @@ function shouldResume() {
   }
 }
 
-async function sha256(text: string) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-  return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-/** Qual opção bate com a answer_key da rodada (null sem a chave ou sem WebCrypto: espera o servidor). */
-async function correctOption(r: Round): Promise<string | null> {
-  if (!r.answer_key || !globalThis.crypto?.subtle) return null;
-  for (const o of r.options) if ((await sha256(`${r.round_id}:${o.id}`)) === r.answer_key) return o.id;
-  return null;
+/** Qual opção bate com a answer_key da rodada (undefined sem a chave: aí espera o servidor). */
+function correctOption(r: Round) {
+  if (!r.answer_key) return undefined;
+  return r.options.find((o) => sha256Hex(`${r.round_id}:${o.id}`) === r.answer_key);
 }
 
 function preloadImages(r: Pick<Round, "options">) {
@@ -91,8 +86,8 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
   // o cabeçalho só aparece depois da primeira rodada (no navegador), então ler a preferência aqui é seguro
   const [sound, setSound] = useState(soundOn);
   const [summary, setSummary] = useState<Summary | null>(null);
-  // resposta certa da rodada atual, conferida no navegador pela answer_key
-  const [key, setKey] = useState<{ round: string; id: string } | null>(null);
+  // "Próxima" tocado antes de o servidor responder: o botão mostra que está carregando
+  const [advancing, setAdvancing] = useState(false);
 
   const sessionId = useRef<string | null>(null);
   const busy = useRef(false);
@@ -129,6 +124,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
     setStreak(r.streak);
     setReveal(null);
     setPicked(null);
+    setAdvancing(false);
     setNow(t);
     setDeadline(t + r.seconds_left * 1000);
     setPhase("question");
@@ -178,15 +174,6 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
     void begin(false);
   }, [begin]);
 
-  useEffect(() => {
-    if (!round) return;
-    let live = true;
-    void correctOption(round).then((id) => live && id && setKey({ round: round.round_id, id }));
-    return () => {
-      live = false;
-    };
-  }, [round]);
-
   // relógio de exibição (a validação do tempo é feita no servidor)
   useEffect(() => {
     if (phase !== "question") return;
@@ -215,8 +202,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
       sent.then((res) => res.next && preloadImages(res.next)).catch(() => {});
 
       // com a answer_key, a revelação aparece na hora; o servidor confirma e completa a fonte
-      const known = key?.round === r.round_id ? key.id : null;
-      const right = known ? r.options.find((o) => o.id === known) : undefined;
+      const right = correctOption(r);
       if (right) {
         const correct = personId === right.id;
         showReveal(
@@ -252,7 +238,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
         fail(e);
       }
     },
-    [round, key, streak, showReveal, fail],
+    [round, streak, showReveal, fail],
   );
 
   // tempo esgotado
@@ -287,8 +273,9 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
     const sid = sessionId.current;
     if (busy.current || !sid) return;
     busy.current = true;
+    // a resposta quase sempre já voltou enquanto a revelação estava na tela; se não, o botão avisa
+    const slow = setTimeout(() => setAdvancing(true), 120);
     try {
-      // a resposta quase sempre já voltou enquanto a revelação estava na tela
       const res = await answering.current;
       answering.current = null;
       if (res?.summary) return finish(res.summary);
@@ -302,6 +289,9 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
       await loadRound(sid);
     } catch (e) {
       fail(e);
+    } finally {
+      clearTimeout(slow);
+      setAdvancing(false);
     }
   }
 
@@ -510,7 +500,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
                     className="inline-block"
                     initial={{ opacity: 0, y: 14, filter: "blur(6px)" }}
                     animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                    transition={{ duration: 0.3, delay: Math.min(i * 0.035, 0.9) }}
+                    transition={{ duration: 0.25, delay: Math.min(i * 0.025, 0.45) }}
                   >
                     {w}&nbsp;
                   </motion.span>
@@ -623,11 +613,21 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
                     type="button"
                     autoFocus
                     onClick={() => void advance()}
-                    className={`${btnPrimary} inline-flex flex-1 items-center justify-center gap-2 text-lg`}
+                    aria-busy={advancing}
+                    className={`${btnPrimary} inline-flex flex-1 items-center justify-center gap-2 text-lg ${advancing ? "opacity-80" : ""}`}
                   >
-                    {reveal.finished ? "Resultado" : "Próxima"}
-                    <ArrowRight className="size-5" strokeWidth={3} aria-hidden />
-                    <kbd className="hidden text-xs font-normal opacity-60 md:inline">Enter</kbd>
+                    {advancing ? (
+                      <>
+                        <LoaderCircle className="size-5 animate-spin" strokeWidth={3} aria-hidden />
+                        Carregando…
+                      </>
+                    ) : (
+                      <>
+                        {reveal.finished ? "Resultado" : "Próxima"}
+                        <ArrowRight className="size-5" strokeWidth={3} aria-hidden />
+                        <kbd className="hidden text-xs font-normal opacity-60 md:inline">Enter</kbd>
+                      </>
+                    )}
                   </button>
                 </div>
                 {(reveal.person.image_credit || reveal.quote?.archive_url) && (
