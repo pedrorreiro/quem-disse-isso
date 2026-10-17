@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { CalendarDays, Play, Quote } from "lucide-react";
+import { CalendarDays, LayoutGrid, Play, Quote } from "lucide-react";
 
 function Letters({ text, className, delay }: { text: string; className?: string; delay: number }) {
   return (
@@ -60,10 +60,16 @@ export default function Hero() {
           <Play className="size-6 fill-ink" aria-hidden />
           Jogar
         </Link>
-        <Link href="/diario" className="btn-pop flex items-center justify-center gap-2 bg-white/10 py-4 font-display text-lg backdrop-blur">
-          <CalendarDays className="size-5" aria-hidden />
-          Desafio do dia
-        </Link>
+        <div className="grid grid-cols-2 gap-3">
+          <Link href="/categorias" className="btn-pop flex items-center justify-center gap-2 bg-white/10 py-4 font-display text-lg backdrop-blur">
+            <LayoutGrid className="size-5" aria-hidden />
+            Categorias
+          </Link>
+          <Link href="/diario" className="btn-pop flex items-center justify-center gap-2 bg-white/10 py-4 font-display text-lg backdrop-blur">
+            <CalendarDays className="size-5" aria-hidden />
+            Desafio do dia
+          </Link>
+        </div>
       </motion.div>
     </>
   );

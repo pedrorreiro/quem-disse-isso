@@ -63,6 +63,21 @@ function storage(key: string, value?: string | null): string | null {
   return null;
 }
 
+// Só a primeira partida aberta depois de recarregar a página retoma a anterior. Entrar pelo botão
+// Jogar (navegação dentro do app ou link novo) sempre começa do zero.
+let canResume = true;
+function shouldResume() {
+  const ok = canResume;
+  canResume = false;
+  if (!ok) return false;
+  try {
+    const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    return nav?.type === "reload";
+  } catch {
+    return false;
+  }
+}
+
 export default function Game({ mode, category, quoteId, challengeId }: Props) {
   const [phase, setPhase] = useState<Phase>("loading");
   const [error, setError] = useState("");
@@ -122,7 +137,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
       setHistory({});
       try {
         // No solo, recarregar a página retoma a partida em andamento (o relógio é do servidor).
-        const saved = !fresh && mode === "solo" ? storage(storageKey) : null;
+        const saved = !fresh && mode === "solo" && shouldResume() ? storage(storageKey) : null;
         if (saved) {
           try {
             sessionId.current = saved;

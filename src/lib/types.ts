@@ -73,3 +73,6 @@ export type Challenge = {
   best_streak: number;
   results: RoundResult[];
 };
+
+/** Categoria na tela de escolha: quantos famosos tem e algumas fotos para a capa. */
+export type CategoryInfo = { id: string; people: number; faces: string[] };

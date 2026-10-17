@@ -1,4 +1,4 @@
-import type { Challenge, GameMode, JokerName, Jokers, Reveal, Round, Summary } from "./types";
+import type { CategoryInfo, Challenge, GameMode, JokerName, Jokers, Reveal, Round, Summary } from "./types";
 
 /** Tudo passa pelo servidor do Next (/api/*): o navegador não fala com o Supabase. */
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
@@ -45,7 +45,7 @@ export const createChallenge = (sessionId: string, name?: string | null) =>
 
 export const getChallenge = (id: string) => rpc<Challenge | null>("get_challenge", { p_challenge_id: id });
 
-export const listCategories = () => call<string[]>("/api/categories");
+export const listCategories = () => call<CategoryInfo[]>("/api/categories");
 
 const ERRORS: Record<string, string> = {
   no_quotes: "Ainda não há frases suficientes para jogar.",

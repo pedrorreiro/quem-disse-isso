@@ -159,9 +159,15 @@ export default function Results({ summary, onReplay }: { summary: Summary; onRep
               {summary.mode === "daily" ? "Partida livre" : "Jogar"}
             </Link>
           )}
-          <Link href="/" className={btnGhost}>
-            Início
-          </Link>
+          {summary.mode === "solo" ? (
+            <Link href="/categorias" className={btnGhost}>
+              Outra categoria
+            </Link>
+          ) : (
+            <Link href="/" className={btnGhost}>
+              Início
+            </Link>
+          )}
         </div>
       </motion.div>
 

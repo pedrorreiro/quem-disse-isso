@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { motion, type TargetAndTransition } from "motion/react";
 import { Check, X } from "lucide-react";
 import type { Option } from "@/lib/types";
@@ -11,7 +11,7 @@ export type CardState = "idle" | "picked" | "eliminated" | "correct" | "wrong" |
 const TILT = [-2.5, 1.8, -1.2, 2.2];
 
 const RING: Record<CardState, string> = {
-  idle: "ring-white/15 hover:ring-lime",
+  idle: "ring-white/15 group-hover:ring-lime",
   picked: "ring-4 ring-white",
   eliminated: "ring-white/5",
   correct: "ring-4 ring-lime shadow-[0_0_40px_-4px_var(--color-lime)]",
@@ -49,10 +49,17 @@ export default function OptionCard({ option, index, state, disabled, onPick }: P
       animate={{ y: 0, rotate: state === "correct" ? 0 : tilt, ...ANIM[state] }}
       transition={{ type: "spring", stiffness: 380, damping: 22, delay: entered ? 0 : 0.25 + index * 0.07 }}
       onAnimationComplete={() => setEntered(true)}
-      whileHover={state === "idle" ? { y: -6, rotate: 0, scale: 1.03 } : undefined}
       whileTap={state === "idle" ? { scale: 0.95 } : undefined}
-      className={`relative flex flex-col overflow-hidden rounded-3xl bg-ink text-left shadow-[0_6px_0_0_rgb(0_0_0/0.5)] ring-2 transition-[box-shadow,--tw-ring-color] ${RING[state]}`}
+      className="group relative flex rounded-3xl text-left"
     >
+      {/* O botão (área de toque) fica parado; só o miolo sobe no hover. Se o botão subisse, a carta
+          saía de baixo do cursor, descia, voltava a ficar sob ele e ficava balançando sozinha. */}
+      <span
+        style={{ "--untilt": `${-tilt}deg` } as CSSProperties}
+        className={`relative flex w-full flex-col overflow-hidden rounded-3xl bg-ink shadow-[0_6px_0_0_rgb(0_0_0/0.5)] ring-2 transition-[box-shadow,--tw-ring-color,translate,scale,rotate] duration-200 ${RING[state]} ${
+          state === "idle" ? "group-hover:-translate-y-1.5 group-hover:scale-[1.03] group-hover:rotate-[var(--untilt)]" : ""
+        }`}
+      >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={option.image_url} alt="" className="aspect-[4/3] w-full object-cover" draggable={false} />
       <span
@@ -77,6 +84,7 @@ export default function OptionCard({ option, index, state, disabled, onPick }: P
           {state === "correct" ? <Check className="size-6" strokeWidth={3.5} /> : <X className="size-6" strokeWidth={3.5} />}
         </motion.span>
       )}
+      </span>
     </motion.button>
   );
 }
