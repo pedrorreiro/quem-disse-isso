@@ -41,14 +41,15 @@ O jogo só usa frases `verified` **de pessoas com foto aprovada**. Um trigger im
 
 ### Regras (validadas no servidor)
 - O resultado mostrado é em **acertos** (ex.: 7/10) e maior sequência. O servidor ainda calcula pontos internamente, mas eles não aparecem.
-- 30 s por rodada. Curingas (solo e desafio): 50/50, +5 s, pular.
+- 30 s por rodada, sem curingas.
+- A rodada traz `answer_key` (sha256 de `<round_id>:<quem disse>`): o navegador mostra acerto/erro na hora e o servidor confirma em seguida (o placar é sempre o do servidor). `answer_round` já devolve a próxima rodada, então "Próxima" não espera rede; o relógio só começa quando `next_round` marca a rodada como servida.
 - **Desafiar um amigo**: ao terminar uma partida, o jogo gera um link `/desafio/<id>` com o nome escolhido. Quem abre joga as mesmas frases e compara os acertos. Cada pessoa joga cada desafio uma vez (abrir de novo retoma a mesma partida).
 - As 3 opções erradas vêm da mesma **área** (futebol, música…), do mesmo **gênero** e do mesmo lado (brasileiro x gringo) de quem disse. Área e gênero ficam editáveis em /admin → Pessoas.
 
 ### Segurança
 O navegador não conhece a URL nem a chave do Supabase. Ele chama `/api/rpc/<função>` (lista fechada de funções), `/api/categories` e `/api/auth/*`; o servidor do Next repassa ao Supabase. A sessão (anônima para jogadores, por e-mail para o admin) fica em cookies `httpOnly`, renovada no servidor.
 
-No banco, o cliente **não lê** `quotes` nem `game_rounds` (RLS sem policies). Tudo passa por funções `SECURITY DEFINER` (`start_game`, `next_round`, `answer_round`, `use_joker`, `eliminate_option`, `get_session_summary`, `get_quote_preview`, `get_quote_public`, `create_challenge`, `get_challenge`, `start_challenge`) que não revelam a resposta antes de ela ser enviada e medem o tempo no servidor. Funções internas (`_pick_options`, …) não são executáveis pelo cliente.
+No banco, o cliente **não lê** `quotes` nem `game_rounds` (RLS sem policies). Tudo passa por funções `SECURITY DEFINER` (`start_game`, `next_round`, `answer_round`, `eliminate_option`, `get_session_summary`, `get_quote_preview`, `get_quote_public`, `create_challenge`, `get_challenge`, `start_challenge`) que não revelam a resposta antes de ela ser enviada e medem o tempo no servidor. Funções internas (`_pick_options`, …) não são executáveis pelo cliente.
 
 ## Dados de exemplo
 

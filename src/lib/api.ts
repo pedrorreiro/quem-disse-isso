@@ -1,4 +1,4 @@
-import type { CategoryInfo, Challenge, GameMode, JokerName, Jokers, Reveal, Round, Summary } from "./types";
+import type { CategoryInfo, Challenge, GameMode, Reveal, Round, Summary } from "./types";
 
 /** Tudo passa pelo servidor do Next (/api/*): o navegador não fala com o Supabase. */
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
@@ -33,12 +33,6 @@ export const nextRound = (sessionId: string) =>
 
 export const answerRound = (roundId: string, personId: string | null) =>
   rpc<Reveal>("answer_round", { p_round_id: roundId, p_person_id: personId });
-
-export const playJoker = (roundId: string, joker: JokerName) =>
-  rpc<{ jokers: Jokers; eliminated: string[]; total_seconds: number; skipped: boolean }>("use_joker", {
-    p_round_id: roundId,
-    p_joker: joker,
-  });
 
 export const createChallenge = (sessionId: string, name?: string | null) =>
   rpc<string>("create_challenge", { p_session_id: sessionId, p_name: name ?? null });

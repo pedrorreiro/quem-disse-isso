@@ -21,6 +21,8 @@ export type Round = {
   score: number;
   streak: number;
   jokers: Jokers;
+  /** sha256("<round_id>:<id de quem disse>"): o navegador confere a resposta sem esperar o servidor. */
+  answer_key?: string;
 };
 
 export type RoundResult = "correct" | "wrong" | "skipped" | "pending";
@@ -59,6 +61,9 @@ export type Reveal = {
     source_timestamp: string | null;
     archive_url: string | null;
   };
+  /** Próxima rodada (sem relógio ainda) ou o resumo, quando a partida acabou. */
+  next?: Omit<Round, "seconds_left"> | null;
+  summary?: Summary | null;
 };
 
 export type GameMode = "solo" | "daily" | "shared" | "challenge";
