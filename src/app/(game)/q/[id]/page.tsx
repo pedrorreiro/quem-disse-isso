@@ -1,20 +1,21 @@
 import type { Metadata } from "next";
-import Game from "@/components/Game";
-import { getQuotePreview } from "@/lib/preview";
+import QuoteShared from "@/components/QuoteShared";
+import { getQuotePublic } from "@/lib/preview";
 
 export async function generateMetadata({ params }: PageProps<"/q/[id]">): Promise<Metadata> {
   const { id } = await params;
-  const preview = await getQuotePreview(id);
-  const title = "Quem disse isso?";
+  const quote = await getQuotePublic(id);
+  const title = quote ? `${quote.person.name} disse isso` : "Quem disse isso?";
+  const description = quote ? `“${quote.text}”` : "Adivinhe quem disse.";
   return {
     title,
-    description: preview ? `“${preview.text}”` : "Adivinhe quem disse.",
-    openGraph: { title, description: preview ? `“${preview.text}”` : undefined },
+    description,
+    openGraph: { title, description },
     twitter: { card: "summary_large_image" },
   };
 }
 
 export default async function SharedQuote({ params }: PageProps<"/q/[id]">) {
   const { id } = await params;
-  return <Game mode="shared" quoteId={id} />;
+  return <QuoteShared quote={await getQuotePublic(id)} />;
 }

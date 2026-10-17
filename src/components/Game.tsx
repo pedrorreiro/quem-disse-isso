@@ -29,6 +29,7 @@ import {
   playJoker,
   startGame,
 } from "@/lib/api";
+import { quoteDetail } from "@/lib/share";
 import type { GameMode, JokerName, Jokers, Reveal, Round, Summary } from "@/lib/types";
 
 type Phase = "loading" | "question" | "answering" | "reveal" | "finished" | "error";
@@ -513,7 +514,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
                     <p className="font-display text-2xl font-black leading-tight">{reveal.person.name}</p>
                     {(reveal.quote.context || reveal.quote.said_on) && (
                       <p className="line-clamp-2 text-sm text-white/60">
-                        {[reveal.quote.context, reveal.quote.said_on?.slice(0, 4)].filter(Boolean).join(", ")}
+                        {quoteDetail(reveal.quote.context, reveal.quote.said_on)}
                       </p>
                     )}
                   </div>
@@ -535,7 +536,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
                     image={{ url: `/api/card/frase/${reveal.quote_id}`, name: "quem-disse-isso.png" }}
                     getData={() => ({
                       title: "Quem Disse Isso?",
-                      text: "Quem disse isso? Duvido você acertar:",
+                      text: `“${reveal.quote.text}” (${reveal.person.name})`,
                       url: `${window.location.origin}/q/${reveal.quote_id}`,
                     })}
                   />

@@ -22,7 +22,7 @@ Next.js (App Router, mobile-first) + Supabase (Postgres, Auth anônimo, RPCs). O
 | `/jogar?cat=…` | Partida solo de 10 rodadas (opcionalmente por categoria) |
 | `/diario` | Desafio do dia: 5 frases iguais para todos, uma tentativa por dia (fuso America/Sao_Paulo) |
 | `/desafio/<id>` | Desafio de um amigo: as mesmas frases, na mesma ordem, e no fim o placar "você x ele" |
-| `/q/<id>` | Link compartilhado de uma frase (prévia e imagem OG mostram a frase, nunca o autor) |
+| `/q/<id>` | Frase compartilhada já revelada: frase, quem disse, fonte e botão para jogar |
 | `/creditos` | Créditos das fotos aprovadas (autor + licença) |
 | `/admin` | Painel de revisão (só admins) |
 
@@ -47,7 +47,7 @@ O jogo só usa frases `verified` **de pessoas com foto aprovada**. Um trigger im
 ### Segurança
 O navegador não conhece a URL nem a chave do Supabase. Ele chama `/api/rpc/<função>` (lista fechada de funções), `/api/categories` e `/api/auth/*`; o servidor do Next repassa ao Supabase. A sessão (anônima para jogadores, por e-mail para o admin) fica em cookies `httpOnly`, renovada no servidor.
 
-No banco, o cliente **não lê** `quotes` nem `game_rounds` (RLS sem policies). Tudo passa por funções `SECURITY DEFINER` (`start_game`, `next_round`, `answer_round`, `use_joker`, `eliminate_option`, `get_session_summary`, `get_quote_preview`, `create_challenge`, `get_challenge`, `start_challenge`) que não revelam a resposta antes de ela ser enviada e medem o tempo no servidor. Funções internas (`_pick_options`, …) não são executáveis pelo cliente.
+No banco, o cliente **não lê** `quotes` nem `game_rounds` (RLS sem policies). Tudo passa por funções `SECURITY DEFINER` (`start_game`, `next_round`, `answer_round`, `use_joker`, `eliminate_option`, `get_session_summary`, `get_quote_preview`, `get_quote_public`, `create_challenge`, `get_challenge`, `start_challenge`) que não revelam a resposta antes de ela ser enviada e medem o tempo no servidor. Funções internas (`_pick_options`, …) não são executáveis pelo cliente.
 
 ## Dados de exemplo
 

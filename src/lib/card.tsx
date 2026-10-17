@@ -92,5 +92,28 @@ export function PlayCta({ host, title }: { host: string; title: string }) {
   );
 }
 
+/**
+ * Foto para embutir na imagem: baixa no servidor e devolve como data URI.
+ * O Commons recusa pedidos sem User-Agent, então não dá para deixar o gerador buscar sozinho.
+ */
+export async function photoSrc(url: string | null | undefined, origin: string): Promise<string | null> {
+  if (!url) return null;
+  try {
+    const res = await fetch(new URL(url, origin), {
+      headers: { "User-Agent": "QuemDisseIsso/1.0 (imagem de compartilhamento)" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return null;
+    const type = res.headers.get("content-type")?.split(";")[0] || "image/jpeg";
+    return `data:${type};base64,${Buffer.from(await res.arrayBuffer()).toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
+/** Crédito da foto (autor · licença), exigido pelas licenças do Commons. */
+export const photoCredit = (credit: string | null, license: string | null) =>
+  credit ? `Foto: ${credit}${license ? ` · ${license}` : ""}` : null;
+
 /** Tamanho de Stories / Status (9:16). */
 export const STORY = { width: 1080, height: 1920 };

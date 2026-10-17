@@ -72,3 +72,9 @@ export const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export const categoryLabel = (c: string) => CATEGORY_LABELS[c] ?? c.charAt(0).toUpperCase() + c.slice(1);
+
+/** "Contexto, ano" sem repetir o ano quando o contexto já fala dele. */
+export function quoteDetail(context: string | null, saidOn: string | null) {
+  const year = saidOn?.slice(0, 4);
+  return [context, year && !context?.includes(year) ? year : null].filter(Boolean).join(", ");
+}

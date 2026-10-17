@@ -14,10 +14,28 @@ async function publicRpc<T>(fn: string, args: Record<string, unknown>): Promise<
   }
 }
 
-/** Texto público de uma frase (nunca o autor). Usado em metadados e imagem OG, no servidor. */
-export async function getQuotePreview(id: string): Promise<{ text: string } | null> {
+export type QuotePublic = {
+  id: string;
+  text: string;
+  said_on: string | null;
+  context: string | null;
+  source_type: string | null;
+  source_url: string;
+  source_timestamp: string | null;
+  archive_url: string | null;
+  person: {
+    name: string;
+    image_url: string | null;
+    image_credit: string | null;
+    image_license: string | null;
+    image_source_url: string | null;
+  };
+};
+
+/** Frase compartilhada, já revelada: texto, quem disse e fonte. Só frases que estão no jogo. */
+export async function getQuotePublic(id: string): Promise<QuotePublic | null> {
   if (!UUID.test(id)) return null;
-  return publicRpc<{ text: string }>("get_quote_preview", { p_quote_id: id });
+  return publicRpc<QuotePublic>("get_quote_public", { p_quote_id: id });
 }
 
 /** Nome e resultado de quem desafiou (nunca as frases). */
