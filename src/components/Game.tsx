@@ -3,18 +3,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, Check, CircleCheck, CircleX, ExternalLink, Flame, LoaderCircle, Quote, TimerOff, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowRight, Check, LayoutGrid, RotateCcw, Trophy, CircleCheck, CircleX, ExternalLink, Flame, LoaderCircle, Quote, TimerOff, Volume2, VolumeX, X } from "lucide-react";
 import OptionCard, { type CardState } from "./OptionCard";
 import Results from "./Results";
 import ShareButton from "./ShareButton";
 import { Confetti, CountUp, buzz, setSoundOn, sfx, soundOn } from "./fx";
 import { answerRound, friendlyError, nextRound, startGame } from "@/lib/api";
-import { storedKind, type Kind } from "@/lib/kind";
-import { quoteDetail } from "@/lib/share";
+import { KIND_ADJ, storedKind, type Kind } from "@/lib/kind";
+import { categoryLabel, quoteDetail } from "@/lib/share";
 import { sha256Hex } from "@/lib/sha256";
 import type { GameMode, Reveal, Round, Summary } from "@/lib/types";
 
-type Phase = "loading" | "question" | "answering" | "reveal" | "finished" | "error";
+type Phase = "loading" | "question" | "answering" | "reveal" | "finished" | "error" | "all_seen";
 
 type Props = { mode: GameMode; category?: string; quoteId?: string; challengeId?: string; kind?: Kind };
 
@@ -131,6 +131,8 @@ export default function Game({ mode, category, quoteId, challengeId, kind: kindP
   const [summary, setSummary] = useState<Summary | null>(null);
   // "Próxima" tocado antes de o servidor responder: o botão mostra que está carregando
   const [advancing, setAdvancing] = useState(false);
+  // o jogador já respondeu tudo daqui e escolheu jogar de novo: as próximas partidas repetem frases
+  const replay = useRef(false);
 
   const sessionId = useRef<string | null>(null);
   const busy = useRef(false);
@@ -201,11 +203,15 @@ export default function Game({ mode, category, quoteId, challengeId, kind: kindP
             storage(storageKey, null);
           }
         }
-        const sid = await startGame(mode, { category, quoteId, challengeId, kind });
+        const sid = await startGame(mode, { category, quoteId, challengeId, kind, replay: replay.current });
         sessionId.current = sid;
         if (mode === "solo") storage(storageKey, sid);
         await loadRound(sid);
       } catch (e) {
+        if (e instanceof Error && e.message === "all_seen") {
+          setPhase("all_seen");
+          return;
+        }
         fail(e);
       }
     },
@@ -364,6 +370,58 @@ export default function Game({ mode, category, quoteId, challengeId, kind: kindP
           Início
         </Link>
       </motion.div>
+    );
+  }
+
+  if (phase === "all_seen") {
+    const where = category ? categoryLabel(category) : "todas as categorias";
+    return (
+      <>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-30 bg-ink/60" aria-hidden />
+        <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="all-seen-title"
+          initial={{ opacity: 0, scale: 0.85, y: 30 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 380, damping: 24 }}
+          className="relative z-40 m-auto flex w-full max-w-sm flex-col items-center gap-4 rounded-[2rem] bg-[#1d1230] p-6 text-center shadow-[0_10px_40px_rgb(0_0_0/0.5)] ring-1 ring-white/10"
+        >
+          <motion.span
+            initial={{ scale: 0, rotate: -40 }}
+            animate={{ scale: 1, rotate: -8 }}
+            transition={{ type: "spring", stiffness: 400, damping: 12, delay: 0.1 }}
+            className="grid size-16 place-items-center rounded-2xl bg-lime text-ink shadow-[0_4px_0_0_rgb(0_0_0/0.5)]"
+            aria-hidden
+          >
+            <Trophy className="size-8" strokeWidth={2.5} />
+          </motion.span>
+          <div>
+            <h2 id="all-seen-title" className="font-display text-2xl font-black leading-tight">
+              Categoria completa!
+            </h2>
+            <p className="mt-2 text-sm text-white/70">
+              Você já respondeu todas as frases {kind ? `${KIND_ADJ[kind]} ` : ""}de {where}. Quer jogar de novo com elas?
+            </p>
+          </div>
+          <button
+            type="button"
+            autoFocus
+            className={`${btnPrimary} inline-flex w-full items-center justify-center gap-2 text-lg`}
+            onClick={() => {
+              replay.current = true;
+              void begin(true);
+            }}
+          >
+            <RotateCcw className="size-5" strokeWidth={3} aria-hidden />
+            Jogar de novo
+          </button>
+          <Link href="/categorias" className={`${btnGhost} inline-flex w-full items-center justify-center gap-2`}>
+            <LayoutGrid className="size-5" aria-hidden />
+            Outra categoria
+          </Link>
+        </motion.div>
+      </>
     );
   }
 

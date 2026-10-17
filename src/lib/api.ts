@@ -19,7 +19,7 @@ export const rpc = <T>(fn: string, args?: Record<string, unknown>) =>
 
 export async function startGame(
   mode: GameMode,
-  opts: { category?: string; quoteId?: string; challengeId?: string; kind?: Kind } = {},
+  opts: { category?: string; quoteId?: string; challengeId?: string; kind?: Kind; replay?: boolean } = {},
 ) {
   if (mode === "challenge") return rpc<string>("start_challenge", { p_challenge_id: opts.challengeId });
   return rpc<string>("start_game", {
@@ -27,6 +27,8 @@ export async function startGame(
     ...(opts.category ? { p_category: opts.category } : {}),
     ...(opts.quoteId ? { p_quote_id: opts.quoteId } : {}),
     ...(opts.kind ? { p_kind: opts.kind } : {}),
+    // sem replay, o solo só traz frases ainda não respondidas (e dá "all_seen" se não sobrou nenhuma)
+    ...(opts.replay ? { p_replay: true } : {}),
   });
 }
 
@@ -44,6 +46,7 @@ export const getChallenge = (id: string) => rpc<Challenge | null>("get_challenge
 export const listCategories = () => call<CategoryInfo[]>("/api/categories");
 
 const ERRORS: Record<string, string> = {
+  all_seen: "Você já respondeu todas as frases daqui.",
   no_quotes: "Ainda não há frases suficientes para jogar.",
   quote_not_found: "Essa frase não existe mais.",
   not_enough_people: "O banco ainda precisa de mais pessoas cadastradas.",
