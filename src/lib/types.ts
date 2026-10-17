@@ -14,6 +14,8 @@ export type Round = {
   position: number;
   total_rounds: number;
   quote_text: string;
+  /** Ano em que a frase foi dita; nulo quando não há data. */
+  year?: number | null;
   options: Option[];
   eliminated: string[];
   total_seconds: number;
