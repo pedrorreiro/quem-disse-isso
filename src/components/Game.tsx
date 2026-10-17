@@ -24,7 +24,7 @@ type RevealView = Pick<Reveal, "correct" | "timed_out" | "streak" | "finished" |
 };
 
 const btnPrimary = "btn-pop bg-lime text-ink";
-const btnGhost = "btn-pop bg-white/10 font-bold backdrop-blur";
+const btnGhost = "btn-pop bg-white/10 font-bold md:backdrop-blur";
 
 // frases longas ganham fonte menor para caber sem rolar
 function quoteSize(text: string) {
@@ -69,6 +69,49 @@ function preloadImages(r: Pick<Round, "options">) {
   for (const o of r.options) new Image().src = o.image_url;
 }
 
+/** Barra de tempo com relógio próprio: só ela redesenha a cada 100 ms, não o jogo inteiro.
+ *  A validação do tempo é feita no servidor. */
+function TimeBar({
+  deadline,
+  totalSeconds,
+  running,
+  stopped,
+}: {
+  deadline: number;
+  totalSeconds: number;
+  running: boolean;
+  stopped: boolean;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  // "now" velho logo após uma rodada nova só deixa a barra cheia (fração limitada a 1) até o 1º tique
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => setNow(Date.now()), 100);
+    return () => clearInterval(id);
+  }, [running, deadline]);
+
+  const remaining = Math.max(0, (deadline - now) / 1000);
+  const fraction = stopped ? 0 : Math.min(1, remaining / totalSeconds);
+  const lowTime = fraction < 0.25;
+  return (
+    <div className="flex items-center gap-3" aria-hidden>
+      <div className="h-3 flex-1 overflow-hidden rounded-full bg-white/10">
+        <motion.div
+          className={`h-full rounded-full ${lowTime ? "bg-pink" : "bg-gradient-to-r from-cyan to-lime"}`}
+          style={{ width: `${fraction * 100}%` }}
+          animate={lowTime && !stopped ? { opacity: [1, 0.45, 1] } : { opacity: 1 }}
+          transition={lowTime ? { duration: 0.6, repeat: Infinity } : undefined}
+        />
+      </div>
+      <span
+        className={`w-9 text-right font-display text-sm font-black tabular-nums ${lowTime && !stopped ? "text-pink" : "text-white/60"}`}
+      >
+        {Math.ceil(stopped ? 0 : Math.min(remaining, totalSeconds))}s
+      </span>
+    </div>
+  );
+}
+
 export default function Game({ mode, category, quoteId, challengeId }: Props) {
   const [phase, setPhase] = useState<Phase>("loading");
   const [error, setError] = useState("");
@@ -76,7 +119,6 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
   const [eliminated, setEliminated] = useState<string[]>([]);
   const [totalSeconds, setTotalSeconds] = useState(30);
   const [deadline, setDeadline] = useState(0);
-  const [now, setNow] = useState(0);
   // resultado de cada rodada (posição → acerto/erro), para as bolinhas e o contador de acertos
   const [history, setHistory] = useState<Record<number, "correct" | "wrong" | "skipped">>({});
   const [streak, setStreak] = useState(0);
@@ -125,7 +167,6 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
     setReveal(null);
     setPicked(null);
     setAdvancing(false);
-    setNow(t);
     setDeadline(t + r.seconds_left * 1000);
     setPhase("question");
   }, []);
@@ -173,15 +214,6 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
     started.current = true;
     void begin(false);
   }, [begin]);
-
-  // relógio de exibição (a validação do tempo é feita no servidor)
-  useEffect(() => {
-    if (phase !== "question") return;
-    const id = setInterval(() => setNow(Date.now()), 100);
-    return () => clearInterval(id);
-  }, [phase]);
-
-  const remaining = Math.max(0, (deadline - now) / 1000);
 
   const showReveal = useCallback((v: RevealView, position: number) => {
     setReveal(v);
@@ -339,8 +371,6 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
   if (!round) return null;
 
   const revealed = phase === "reveal" && reveal;
-  const fraction = revealed ? 0 : remaining / totalSeconds;
-  const lowTime = fraction < 0.25;
   const hits = Object.values(history).filter((v) => v === "correct").length;
   const words = round.quote_text.split(/\s+/);
 
@@ -455,22 +485,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
         </div>
       </header>
 
-      {/* barra de tempo */}
-      <div className="flex items-center gap-3" aria-hidden>
-        <div className="h-3 flex-1 overflow-hidden rounded-full bg-white/10">
-          <motion.div
-            className={`h-full rounded-full ${lowTime ? "bg-pink" : "bg-gradient-to-r from-cyan to-lime"}`}
-            style={{ width: `${fraction * 100}%` }}
-            animate={lowTime && !revealed ? { opacity: [1, 0.45, 1] } : { opacity: 1 }}
-            transition={lowTime ? { duration: 0.6, repeat: Infinity } : undefined}
-          />
-        </div>
-        <span
-          className={`w-9 text-right font-display text-sm font-black tabular-nums ${lowTime && !revealed ? "text-pink" : "text-white/60"}`}
-        >
-          {Math.ceil(revealed ? 0 : remaining)}s
-        </span>
-      </div>
+      <TimeBar deadline={deadline} totalSeconds={totalSeconds} running={phase === "question"} stopped={!!revealed} />
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -481,7 +496,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
           transition={{ type: "spring", stiffness: 260, damping: 26 }}
           className="flex flex-col gap-4"
         >
-          <blockquote className="relative rounded-[2rem] bg-white/[0.07] p-6 pt-8 ring-1 ring-white/10 backdrop-blur-md md:p-10">
+          <blockquote className="relative rounded-[2rem] bg-white/[0.07] p-6 pt-8 ring-1 ring-white/10 md:p-10 md:backdrop-blur-md">
             <motion.span
               aria-hidden
               initial={{ scale: 0, rotate: -40 }}
@@ -498,8 +513,8 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
                   <motion.span
                     key={i}
                     className="inline-block"
-                    initial={{ opacity: 0, y: 14, filter: "blur(6px)" }}
-                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.25, delay: Math.min(i * 0.025, 0.45) }}
                   >
                     {w}&nbsp;
@@ -547,7 +562,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
               transition={{ type: "spring", stiffness: 300, damping: 30, delay: 0.1 }}
               className="fixed inset-x-0 bottom-0 z-30 px-2 md:px-8"
             >
-              <div className="mx-auto flex max-w-md flex-col gap-4 rounded-t-[2rem] bg-[#1d1230]/95 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_-10px_40px_rgb(0_0_0/0.5)] ring-1 ring-white/10 backdrop-blur-xl md:max-w-3xl md:p-6">
+              <div className="mx-auto flex max-w-md flex-col gap-4 rounded-t-[2rem] bg-[#1d1230]/95 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_-10px_40px_rgb(0_0_0/0.5)] ring-1 ring-white/10 md:max-w-3xl md:backdrop-blur-xl md:p-6">
                 <div className="mx-auto h-1.5 w-10 rounded-full bg-white/20" aria-hidden />
                 <div className="flex items-center gap-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -592,6 +607,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
                       </a>
                       <ShareButton
                         compact
+                        prefetchDelay={1500}
                         label="Compartilhar"
                         className={`${btnGhost} px-4 text-sm`}
                         image={{ url: `/api/card/frase/${reveal.quote_id}`, name: "quem-disse-isso.png" }}

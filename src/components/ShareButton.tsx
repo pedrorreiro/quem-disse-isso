@@ -12,6 +12,8 @@ type Props = {
   className?: string;
   /** No celular mostra só o ícone (o texto fica para leitores de tela). */
   compact?: boolean;
+  /** Espera (ms) antes de pré-carregar a imagem. */
+  prefetchDelay?: number;
 };
 
 const NOTES = {
@@ -20,25 +22,42 @@ const NOTES = {
   failed: "Não consegui compartilhar.",
 } as const;
 
-export default function ShareButton({ label, getData, image, className = "", compact = false }: Props) {
+export default function ShareButton({ label, getData, image, className = "", compact = false, prefetchDelay = 0 }: Props) {
   const [note, setNote] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const pending = useRef<Promise<File | null>>(Promise.resolve(null));
   const imageUrl = image?.url;
   const imageName = image?.name;
 
-  // pré-carrega a imagem: o navegador só libera a folha de compartilhamento logo após o toque
+  // inicia o download agora, se o atraso ainda não venceu (o toque não espera o timer)
+  const kick = useRef<() => void>(() => {});
+
+  // pré-carrega a imagem: o navegador só libera a folha de compartilhamento logo após o toque.
+  // Com prefetchDelay, espera antes de baixar (a imagem tem ~500 KB e leva ~1 s para ser gerada),
+  // para não disputar rede e processador com o jogo; sair da tela cancela o download.
   useEffect(() => {
     if (!imageUrl || !imageName) return;
-    let live = true;
-    pending.current = fetchImage(imageUrl, imageName);
-    void pending.current.then((f) => live && setFile(f));
-    return () => {
-      live = false;
+    const ctrl = new AbortController();
+    let resolve: (f: File | null) => void = () => {};
+    pending.current = new Promise((r) => (resolve = r));
+    void pending.current.then((f) => !ctrl.signal.aborted && setFile(f));
+    let started = false;
+    const start = () => {
+      if (started) return;
+      started = true;
+      void fetchImage(imageUrl, imageName, ctrl.signal).then(resolve);
     };
-  }, [imageUrl, imageName]);
+    kick.current = start;
+    const timer = setTimeout(start, prefetchDelay);
+    return () => {
+      clearTimeout(timer);
+      ctrl.abort();
+      resolve(null);
+    };
+  }, [imageUrl, imageName, prefetchDelay]);
 
   async function onClick() {
+    kick.current();
     // toque antes de a imagem chegar: espera o download em vez de mandar só o link
     const outcome = await share(getData(), file ?? (await pending.current));
     if (outcome === "shared") return;

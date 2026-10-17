@@ -66,9 +66,9 @@ export async function share(data: ShareData, image?: File | null): Promise<Share
 }
 
 /** Baixa a imagem antes do clique: o navegador só abre a folha de compartilhamento logo após o toque. */
-export async function fetchImage(url: string, name: string): Promise<File | null> {
+export async function fetchImage(url: string, name: string, signal?: AbortSignal): Promise<File | null> {
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { signal });
     if (!res.ok) return null;
     return new File([await res.blob()], name, { type: "image/png" });
   } catch {

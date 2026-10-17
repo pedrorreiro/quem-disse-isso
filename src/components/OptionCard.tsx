@@ -19,13 +19,14 @@ const RING: Record<CardState, string> = {
   dimmed: "ring-white/5",
 };
 
+// só opacidade e transform: animar filter (grayscale) pesa no celular
 const ANIM: Record<CardState, TargetAndTransition> = {
-  idle: { opacity: 1, scale: 1, x: 0, filter: "grayscale(0)" },
-  picked: { opacity: 1, scale: 0.96, x: 0, filter: "grayscale(0)" },
-  eliminated: { opacity: 0.25, scale: 0.9, filter: "grayscale(1)" },
-  correct: { opacity: 1, scale: [1, 1.1, 1.04], rotate: 0, filter: "grayscale(0)", transition: { duration: 0.5 } },
+  idle: { opacity: 1, scale: 1, x: 0 },
+  picked: { opacity: 1, scale: 0.96, x: 0 },
+  eliminated: { opacity: 0.25, scale: 0.9 },
+  correct: { opacity: 1, scale: [1, 1.1, 1.04], rotate: 0, transition: { duration: 0.5 } },
   wrong: { opacity: 1, scale: 1, x: [0, -12, 12, -9, 9, -4, 0], transition: { duration: 0.5 } },
-  dimmed: { opacity: 0.35, scale: 0.96, filter: "grayscale(0.6)" },
+  dimmed: { opacity: 0.35, scale: 0.96 },
 };
 
 type Props = {
@@ -61,7 +62,12 @@ export default function OptionCard({ option, index, state, disabled, onPick }: P
         }`}
       >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={option.image_url} alt="" className="aspect-[4/3] w-full object-cover" draggable={false} />
+      <img
+        src={option.image_url}
+        alt=""
+        className={`aspect-[4/3] w-full object-cover ${state === "eliminated" ? "grayscale" : ""}`}
+        draggable={false}
+      />
       <span
         className={`flex flex-1 items-center justify-between gap-2 px-3 py-2.5 font-display text-sm font-bold leading-tight md:text-base ${
           state === "eliminated" ? "line-through" : ""

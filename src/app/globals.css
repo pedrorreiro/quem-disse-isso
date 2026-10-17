@@ -88,3 +88,15 @@ body {
     animation: none;
   }
 }
+
+/* No celular o fundo fica parado: manchas desfocadas animadas e a mistura do granulado
+   ocupam a placa de vídeo a cada quadro e atrasam o toque. */
+@media (max-width: 767px) {
+  .blob {
+    animation: none;
+  }
+  .grain {
+    mix-blend-mode: normal;
+    opacity: 0.04;
+  }
+}
