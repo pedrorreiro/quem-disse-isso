@@ -59,8 +59,14 @@ export type DraftQuote = Required<Pick<QuoteFields, "text" | "source_url" | "dif
     person_id: string;
     is_demo: boolean;
     review_note: string | null;
+    status: QuoteStatus;
     person: Pick<Person, "id" | "name" | "category" | "image_url" | "photo_status">;
   };
+
+export type QuoteStatus = "draft" | "verified" | "rejected";
+
+/** Frase na lista completa do painel, com o uso no jogo. */
+export type AdminQuote = DraftQuote & { playable: boolean; plays: number; hits: number; created_at: string };
 
 export type Overview = {
   quotes_draft: number;
@@ -71,12 +77,13 @@ export type Overview = {
   playable: number;
 };
 
-export type ReviewAction = "approve" | "reject" | "save";
+export type ReviewAction = "approve" | "reject" | "save" | "reopen";
 
 export const isAdmin = () => rpc<boolean>("is_admin");
 export const adminOverview = () => rpc<Overview>("admin_overview");
 export const adminPeople = () => rpc<Person[]>("admin_people");
 export const adminQuoteQueue = () => rpc<DraftQuote[]>("admin_quote_queue");
+export const adminQuotes = () => rpc<AdminQuote[]>("admin_quotes");
 
 export const reviewQuote = (id: string, action: ReviewAction, fields: QuoteFields = {}, note?: string) =>
   rpc<unknown>("admin_review_quote", { p_quote_id: id, p_action: action, p_fields: fields, p_note: note ?? null });

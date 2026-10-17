@@ -7,9 +7,10 @@ import { friendlyError } from "@/lib/api";
 import NewQuote from "./NewQuote";
 import PeopleAdmin from "./PeopleAdmin";
 import QuoteReview from "./QuoteReview";
+import QuotesAdmin from "./QuotesAdmin";
 import { Field, btnGhost, btnPrimary, input } from "./ui";
 
-type Tab = "quotes" | "photos" | "people" | "new";
+type Tab = "quotes" | "all" | "photos" | "people" | "new";
 type Auth = { state: "loading" } | { state: "login" } | { state: "denied"; userId: string } | { state: "ok" };
 
 export default function AdminApp() {
@@ -141,7 +142,8 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
   useEffect(refresh, [refresh]);
 
   const tabs: { id: Tab; label: string; badge?: number }[] = [
-    { id: "quotes", label: "Frases", badge: overview?.quotes_draft },
+    { id: "quotes", label: "Fila de revisão", badge: overview?.quotes_draft },
+    { id: "all", label: "Todas as frases" },
     { id: "photos", label: "Fotos", badge: overview?.photos_pending },
     { id: "people", label: "Pessoas" },
     { id: "new", label: "Nova frase" },
@@ -191,6 +193,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
       </nav>
 
       {tab === "quotes" && <QuoteReview onChanged={refresh} />}
+      {tab === "all" && <QuotesAdmin onChanged={refresh} />}
       {tab === "photos" && <PeopleAdmin key="photos" view="photos" onChanged={refresh} />}
       {tab === "people" && <PeopleAdmin key="people" view="people" onChanged={refresh} />}
       {tab === "new" && <NewQuote onChanged={refresh} />}

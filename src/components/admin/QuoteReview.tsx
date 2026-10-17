@@ -86,7 +86,7 @@ export default function QuoteReview({ onChanged }: { onChanged: () => void }) {
   );
 }
 
-function QuoteEditor({
+export function QuoteEditor({
   quote,
   people,
   onAct,
@@ -157,28 +157,40 @@ function QuoteEditor({
             className={input}
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="ex.: fonte não confirma a frase"
+            placeholder={quote.status === "verified" ? "ex.: por que saiu do jogo" : "ex.: fonte não confirma a frase"}
           />
         </Field>
 
         {error && <p className="text-sm text-rose-300">{error}</p>}
 
         <div className="flex flex-wrap items-center justify-end gap-2 border-t border-white/10 pt-4">
-          <button type="button" className={btnDanger} disabled={!!busy} onClick={() => run("reject")}>
-            {busy === "reject" ? "Rejeitando…" : "Rejeitar"}
+          {quote.status === "verified" ? (
+            <button type="button" className={btnDanger} disabled={!!busy} onClick={() => run("reject")}>
+              {busy === "reject" ? "Tirando…" : "Tirar do jogo"}
+            </button>
+          ) : quote.status === "rejected" ? (
+            <button type="button" className={btnGhost} disabled={!!busy} onClick={() => run("reopen")}>
+              {busy === "reopen" ? "Voltando…" : "Voltar para rascunho"}
+            </button>
+          ) : (
+            <button type="button" className={btnDanger} disabled={!!busy} onClick={() => run("reject")}>
+              {busy === "reject" ? "Rejeitando…" : "Rejeitar"}
+            </button>
+          )}
+          <button type="button" className={btnGhost} disabled={!!busy || !dirty || missing} onClick={() => run("save")}>
+            {busy === "save" ? "Salvando…" : quote.status === "draft" ? "Salvar rascunho" : "Salvar alterações"}
           </button>
-          <button type="button" className={btnGhost} disabled={!!busy || !dirty} onClick={() => run("save")}>
-            {busy === "save" ? "Salvando…" : "Salvar rascunho"}
-          </button>
-          <button
-            type="button"
-            className={btnOk}
-            disabled={!!busy || missing}
-            title={missing ? "Preencha a frase e uma URL de fonte" : undefined}
-            onClick={() => run("approve")}
-          >
-            {busy === "approve" ? "Aprovando…" : dirty ? "Salvar e aprovar" : "Aprovar"}
-          </button>
+          {quote.status !== "verified" && (
+            <button
+              type="button"
+              className={btnOk}
+              disabled={!!busy || missing}
+              title={missing ? "Preencha a frase e uma URL de fonte" : undefined}
+              onClick={() => run("approve")}
+            >
+              {busy === "approve" ? "Aprovando…" : dirty ? "Salvar e aprovar" : "Aprovar"}
+            </button>
+          )}
         </div>
       </div>
     </article>
