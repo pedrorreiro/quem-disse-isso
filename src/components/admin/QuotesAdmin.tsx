@@ -14,6 +14,7 @@ import {
   type ReviewAction,
 } from "@/lib/admin";
 import { friendlyError } from "@/lib/api";
+import KindToggle from "./KindToggle";
 import { QuoteEditor } from "./QuoteReview";
 import { Avatar, btnDanger, input } from "./ui";
 
@@ -60,6 +61,8 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
   const [filter, setFilter] = useState<Filter>("playable");
   const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [toggling, setToggling] = useState<string | null>(null);
+  // frases com o tipo trocado agora: continuam na lista (apagadas) até mudar o filtro, para dar para desfazer
+  const [kept, setKept] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -100,11 +103,11 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
     const words = fold(query).split(/\s+/).filter(Boolean);
     return (quotes ?? []).filter((q) => {
       if (!inStatus(q, filter)) return false;
-      if (kindFilter !== "all" && (q.kind ?? "polemica") !== kindFilter) return false;
+      if (kindFilter !== "all" && (q.kind ?? "polemica") !== kindFilter && !kept.has(q.id)) return false;
       const hay = fold(`${q.text} ${q.person.name} ${q.context ?? ""}`);
       return words.every((w) => hay.includes(w));
     });
-  }, [quotes, filter, kindFilter, query]);
+  }, [quotes, filter, kindFilter, query, kept]);
 
   if (error) return <p className="text-rose-300">{error}</p>;
   if (!quotes) return <p className="animate-pulse text-white/50">Carregando frases…</p>;
@@ -131,10 +134,10 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
     onChanged();
   }
 
-  async function toggleKind(q: AdminQuote) {
-    const kind = q.kind === "iconica" ? "polemica" : "iconica";
+  async function changeKind(q: AdminQuote, kind: "iconica" | "polemica") {
     const set = (k: AdminQuote["kind"]) => setQuotes((all) => all!.map((x) => (x.id === q.id ? { ...x, kind: k } : x)));
     setToggling(q.id);
+    setKept((k) => new Set(k).add(q.id));
     set(kind);
     try {
       await reviewQuote(q.id, "save", { kind });
@@ -192,7 +195,10 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
               key={f.id}
               type="button"
               aria-pressed={filter === f.id}
-              onClick={() => setFilter(f.id)}
+              onClick={() => {
+                setFilter(f.id);
+                setKept(new Set());
+              }}
               className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold ${
                 filter === f.id ? "bg-amber-400 text-neutral-950" : "text-white/70 hover:bg-white/5"
               }`}
@@ -209,7 +215,10 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
             key={f.id}
             type="button"
             aria-pressed={kindFilter === f.id}
-            onClick={() => setKindFilter(f.id)}
+            onClick={() => {
+              setKindFilter(f.id);
+              setKept(new Set());
+            }}
             className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold ${
               kindFilter !== f.id
                 ? "text-white/70 hover:bg-white/5"
@@ -246,7 +255,12 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
             const [label, cls] = statusBadge(q);
             const isOpen = open === q.id;
             return (
-              <li key={q.id} className="flex flex-wrap overflow-hidden rounded-2xl bg-white/[0.03] ring-1 ring-white/10">
+              <li
+                key={q.id}
+                className={`flex flex-wrap overflow-hidden rounded-2xl bg-white/[0.03] ring-1 ring-white/10 transition-opacity ${
+                  kindFilter !== "all" && (q.kind ?? "polemica") !== kindFilter ? "opacity-50" : ""
+                }`}
+              >
                 <button
                   type="button"
                   aria-expanded={isOpen}
@@ -269,23 +283,14 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
                   </div>
                   <ChevronDown className={`size-5 shrink-0 text-white/40 transition ${isOpen ? "rotate-180" : ""}`} aria-hidden />
                 </button>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={q.kind === "iconica"}
-                  aria-label={`Frase de ${q.person.name} é ${q.kind === "iconica" ? "icônica" : "polêmica"}. Trocar o tipo`}
-                  title="Trocar entre icônica e polêmica"
-                  onClick={() => toggleKind(q)}
-                  disabled={toggling === q.id}
-                  className="flex w-24 shrink-0 flex-col items-center justify-center gap-1.5 self-stretch border-l border-white/10 text-[11px] font-semibold hover:bg-white/[0.03] disabled:opacity-60"
-                >
-                  <span className={`relative h-5 w-9 rounded-full transition-colors ${q.kind === "iconica" ? "bg-cyan" : "bg-pink"}`} aria-hidden>
-                    <span
-                      className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-all ${q.kind === "iconica" ? "left-0.5" : "left-[18px]"}`}
-                    />
-                  </span>
-                  <span className={q.kind === "iconica" ? "text-cyan" : "text-pink"}>{q.kind === "iconica" ? "Icônica" : "Polêmica"}</span>
-                </button>
+                <div className="flex shrink-0 items-center self-stretch border-l border-white/10 px-2 md:px-3">
+                  <KindToggle
+                    value={q.kind ?? "polemica"}
+                    onChange={(k) => changeKind(q, k)}
+                    disabled={toggling === q.id}
+                    label={`Tipo da frase de ${q.person.name}`}
+                  />
+                </div>
                 {q.status === "rejected" && (
                   <button
                     type="button"
