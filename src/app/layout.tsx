@@ -32,7 +32,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const MODE_SCRIPT = `try{if(!location.pathname.startsWith("/admin")&&localStorage.getItem("qdi:tipo")==="polemica")document.documentElement.dataset.mode="polemica"}catch(e){}`;
+const MODE_SCRIPT = `try{if(!location.pathname.startsWith("/admin")&&localStorage.getItem("qdi:modo")==="polemica")document.documentElement.dataset.mode="polemica"}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
