@@ -3,7 +3,8 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { CalendarDays, LayoutGrid, Play, Quote } from "lucide-react";
+import { CalendarDays, Flame, LayoutGrid, Play, Quote } from "lucide-react";
+import { useKind } from "@/lib/useKind";
 import KindSwitch from "./KindSwitch";
 
 function Letters({ text, className, delay }: { text: string; className?: string; delay: number }) {
@@ -24,6 +25,8 @@ function Letters({ text, className, delay }: { text: string; className?: string;
 }
 
 export default function Hero() {
+  const [kind] = useKind();
+  const polemica = kind === "polemica";
   return (
     <>
       <header className="text-center">
@@ -34,7 +37,7 @@ export default function Hero() {
           className="mb-4 inline-grid size-16 place-items-center rounded-2xl bg-pink text-white shadow-[0_5px_0_0_rgb(0_0_0/0.5)]"
           aria-hidden
         >
-          <Quote className="size-8 fill-white" />
+          {polemica ? <Flame className="size-8 fill-white" /> : <Quote className="size-8 fill-white" />}
         </motion.span>
         <h1 className="font-display text-6xl font-black leading-[0.9] tracking-tight md:text-8xl" aria-label="Quem disse isso?">
           <Letters text="Quem" delay={0} />
@@ -47,7 +50,7 @@ export default function Hero() {
           transition={{ delay: 0.8 }}
           className="mt-5 text-white/70"
         >
-          Aparece a frase. Você descobre quem soltou essa pérola.
+          {polemica ? "Frases que deram treta. Você descobre quem falou." : "Aparece a frase. Você descobre quem soltou essa pérola."}
         </motion.p>
       </header>
 
@@ -57,7 +60,6 @@ export default function Hero() {
         transition={{ type: "spring", stiffness: 260, damping: 22, delay: 0.9 }}
         className="flex flex-col gap-4 md:mx-auto md:w-full md:max-w-md"
       >
-        <KindSwitch />
         <Link href="/jogar" className="btn-pop flex items-center justify-center gap-2 bg-lime py-5 font-display text-2xl font-black text-ink">
           <Play className="size-6 fill-ink" aria-hidden />
           Jogar
@@ -72,6 +74,7 @@ export default function Hero() {
             Desafio do dia
           </Link>
         </div>
+        <KindSwitch />
       </motion.div>
     </>
   );

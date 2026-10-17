@@ -504,8 +504,19 @@ export default function Game({ mode, category, quoteId, challengeId, kind: kindP
               transition={{ type: "spring", stiffness: 400, damping: 12, delay: 0.1 }}
               className="absolute -left-2 -top-4 grid size-12 place-items-center rounded-2xl bg-pink text-white shadow-[0_4px_0_0_rgb(0_0_0/0.5)]"
             >
-              <Quote className="size-6 fill-white" />
+              {kind === "polemica" ? <Flame className="size-6 fill-white" /> : <Quote className="size-6 fill-white" />}
             </motion.span>
+            {round.year && (
+              <motion.span
+                initial={{ scale: 0, rotate: 30 }}
+                animate={{ scale: 1, rotate: 6 }}
+                transition={{ type: "spring", stiffness: 400, damping: 12, delay: 0.15 }}
+                className="absolute -right-2 -top-3 rounded-full bg-lime px-3 py-1 font-display text-sm font-extrabold tabular-nums text-ink shadow-[0_3px_0_0_rgb(0_0_0/0.5)]"
+              >
+                <span className="sr-only">Dita em </span>
+                {round.year}
+              </motion.span>
+            )}
             <p className={`font-display font-extrabold leading-[1.15] tracking-tight ${quoteSize(round.quote_text)}`}>
               <span className="sr-only">{round.quote_text}</span>
               <span aria-hidden>

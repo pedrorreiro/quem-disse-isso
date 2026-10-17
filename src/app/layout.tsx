@@ -32,9 +32,15 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+const MODE_SCRIPT = `try{if(!location.pathname.startsWith("/admin")&&localStorage.getItem("qdi:tipo")==="polemica")document.documentElement.dataset.mode="polemica"}catch(e){}`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="pt-BR" className={`${geistSans.variable} ${bricolage.variable} h-full antialiased`}>
+    <html lang="pt-BR" className={`${geistSans.variable} ${bricolage.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        {/* modo polêmica antes do primeiro quadro, para a página não piscar com a paleta padrão */}
+        <script dangerouslySetInnerHTML={{ __html: MODE_SCRIPT }} />
+      </head>
       <body className="min-h-dvh">
         {children}
         <Analytics />
