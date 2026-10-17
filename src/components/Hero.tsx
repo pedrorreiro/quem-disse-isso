@@ -61,12 +61,12 @@ export default function Hero() {
           Jogar
         </Link>
         <div className="grid grid-cols-2 gap-3">
-          <Link href="/categorias" className="btn-pop flex items-center justify-center gap-2 bg-white/10 py-4 font-display text-lg backdrop-blur">
-            <LayoutGrid className="size-5" aria-hidden />
+          <Link href="/categorias" className="btn-pop flex items-center justify-center gap-1.5 whitespace-nowrap bg-white/10 px-2 py-4 font-display text-base backdrop-blur sm:gap-2 sm:px-3 sm:text-lg">
+            <LayoutGrid className="size-5 shrink-0" aria-hidden />
             Categorias
           </Link>
-          <Link href="/diario" className="btn-pop flex items-center justify-center gap-2 bg-white/10 py-4 font-display text-lg backdrop-blur">
-            <CalendarDays className="size-5" aria-hidden />
+          <Link href="/diario" className="btn-pop flex items-center justify-center gap-1.5 whitespace-nowrap bg-white/10 px-2 py-4 font-display text-base backdrop-blur sm:gap-2 sm:px-3 sm:text-lg">
+            <CalendarDays className="size-5 shrink-0" aria-hidden />
             Desafio do dia
           </Link>
         </div>
