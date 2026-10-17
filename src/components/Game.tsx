@@ -3,47 +3,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import {
-  ArrowRight,
-  Check,
-  CircleCheck,
-  CircleX,
-  ExternalLink,
-  Flame,
-  Hourglass,
-  Quote,
-  SkipForward,
-  SquareSplitHorizontal,
-  TimerOff,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowRight, Check, CircleCheck, CircleX, ExternalLink, Flame, Quote, TimerOff, X } from "lucide-react";
 import OptionCard, { type CardState } from "./OptionCard";
 import Results from "./Results";
 import ShareButton from "./ShareButton";
 import { Confetti, CountUp, buzz } from "./fx";
-import {
-  answerRound,
-  friendlyError,
-  nextRound,
-  playJoker,
-  startGame,
-} from "@/lib/api";
+import { answerRound, friendlyError, nextRound, startGame } from "@/lib/api";
 import { quoteDetail } from "@/lib/share";
-import type { GameMode, JokerName, Jokers, Reveal, Round, Summary } from "@/lib/types";
+import type { GameMode, Reveal, Round, Summary } from "@/lib/types";
 
 type Phase = "loading" | "question" | "answering" | "reveal" | "finished" | "error";
 
 type Props = { mode: GameMode; category?: string; quoteId?: string; challengeId?: string };
 
+/** O que a revelação mostra. Fonte e contexto chegam do servidor logo depois (quote = null até lá). */
+type RevealView = Pick<Reveal, "correct" | "timed_out" | "streak" | "finished" | "chosen_person_id" | "person"> & {
+  quote: Reveal["quote"] | null;
+  quote_id: string | null;
+};
+
 const btnPrimary = "btn-pop bg-lime text-ink";
 const btnGhost = "btn-pop bg-white/10 font-bold backdrop-blur";
-
-const JOKERS: { name: JokerName; label: string; icon: LucideIcon }[] = [
-  { name: "fifty", label: "50/50", icon: SquareSplitHorizontal },
-  { name: "time", label: "+5s", icon: Hourglass },
-  { name: "skip", label: "Pular", icon: SkipForward },
-];
 
 // frases longas ganham fonte menor para caber sem rolar
 function quoteSize(text: string) {
@@ -63,25 +43,46 @@ function storage(key: string, value?: string | null): string | null {
   return null;
 }
 
+async function sha256(text: string) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Qual opção bate com a answer_key da rodada (null sem a chave ou sem WebCrypto: espera o servidor). */
+async function correctOption(r: Round): Promise<string | null> {
+  if (!r.answer_key || !globalThis.crypto?.subtle) return null;
+  for (const o of r.options) if ((await sha256(`${r.round_id}:${o.id}`)) === r.answer_key) return o.id;
+  return null;
+}
+
+function preloadImages(r: Pick<Round, "options">) {
+  for (const o of r.options) new Image().src = o.image_url;
+}
+
 export default function Game({ mode, category, quoteId, challengeId }: Props) {
   const [phase, setPhase] = useState<Phase>("loading");
   const [error, setError] = useState("");
   const [round, setRound] = useState<Round | null>(null);
   const [eliminated, setEliminated] = useState<string[]>([]);
-  const [jokers, setJokers] = useState<Jokers>({});
   const [totalSeconds, setTotalSeconds] = useState(30);
   const [deadline, setDeadline] = useState(0);
   const [now, setNow] = useState(0);
   // resultado de cada rodada (posição → acerto/erro), para as bolinhas e o contador de acertos
   const [history, setHistory] = useState<Record<number, "correct" | "wrong" | "skipped">>({});
   const [streak, setStreak] = useState(0);
-  const [reveal, setReveal] = useState<Reveal | null>(null);
+  const [reveal, setReveal] = useState<RevealView | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
+  // resposta certa da rodada atual, conferida no navegador pela answer_key
+  const [key, setKey] = useState<{ round: string; id: string } | null>(null);
 
   const sessionId = useRef<string | null>(null);
   const busy = useRef(false);
   const started = useRef(false);
+  // rodada mostrada antes de o servidor ligar o relógio: a resposta espera esse pedido
+  const serving = useRef<Promise<unknown>>(Promise.resolve());
+  // resposta em andamento; traz a próxima rodada (ou o resumo) para o "Próxima" não esperar
+  const answering = useRef<Promise<Reveal> | null>(null);
   const storageKey = `qdi:sid:${mode}:${category ?? ""}:${quoteId ?? ""}`;
 
   const fail = useCallback((e: unknown) => {
@@ -90,35 +91,45 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
     setPhase("error");
   }, []);
 
+  const finish = useCallback(
+    (s: Summary) => {
+      busy.current = false;
+      storage(storageKey, null);
+      setSummary(s);
+      setPhase("finished");
+    },
+    [storageKey],
+  );
+
+  const showRound = useCallback((r: Round) => {
+    busy.current = false;
+    const t = Date.now();
+    setRound(r);
+    setEliminated(r.eliminated);
+    setTotalSeconds(r.total_seconds);
+    setStreak(r.streak);
+    setReveal(null);
+    setPicked(null);
+    setNow(t);
+    setDeadline(t + r.seconds_left * 1000);
+    setPhase("question");
+  }, []);
+
   const loadRound = useCallback(
     async (sid: string) => {
       const r = await nextRound(sid);
-      busy.current = false;
-      if (r.finished) {
-        storage(storageKey, null);
-        setSummary(r);
-        setPhase("finished");
-        return;
-      }
-      const t = Date.now();
-      setRound(r);
-      setEliminated(r.eliminated);
-      setJokers(r.jokers);
-      setTotalSeconds(r.total_seconds);
-      setStreak(r.streak);
-      setReveal(null);
-      setPicked(null);
-      setNow(t);
-      setDeadline(t + r.seconds_left * 1000);
-      setPhase("question");
+      if (r.finished) finish(r);
+      else showRound(r);
     },
-    [storageKey],
+    [finish, showRound],
   );
 
   const begin = useCallback(
     async (fresh: boolean) => {
       setPhase("loading");
       setHistory({});
+      serving.current = Promise.resolve();
+      answering.current = null;
       try {
         // No solo, recarregar a página retoma a partida em andamento (o relógio é do servidor).
         const saved = !fresh && mode === "solo" ? storage(storageKey) : null;
@@ -148,6 +159,15 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
     void begin(false);
   }, [begin]);
 
+  useEffect(() => {
+    if (!round) return;
+    let live = true;
+    void correctOption(round).then((id) => live && id && setKey({ round: round.round_id, id }));
+    return () => {
+      live = false;
+    };
+  }, [round]);
+
   // relógio de exibição (a validação do tempo é feita no servidor)
   useEffect(() => {
     if (phase !== "question") return;
@@ -157,28 +177,64 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
 
   const remaining = Math.max(0, (deadline - now) / 1000);
 
+  const showReveal = useCallback((v: RevealView, position: number) => {
+    setReveal(v);
+    setHistory((h) => ({ ...h, [position]: v.correct ? "correct" : "wrong" }));
+    setStreak(v.streak);
+    setPhase("reveal");
+  }, []);
+
   const answer = useCallback(
     async (personId: string | null) => {
       if (!round || busy.current) return;
       busy.current = true;
       setPicked(personId);
-      setPhase("answering");
-      try {
-        const r = await answerRound(round.round_id, personId);
+      const r = round;
+      const sid = serving.current;
+      const sent = sid.then(() => answerRound(r.round_id, personId));
+      answering.current = sent;
+      sent.then((res) => res.next && preloadImages(res.next)).catch(() => {});
+
+      // com a answer_key, a revelação aparece na hora; o servidor confirma e completa a fonte
+      const known = key?.round === r.round_id ? key.id : null;
+      const right = known ? r.options.find((o) => o.id === known) : undefined;
+      if (right) {
+        const correct = personId === right.id;
+        showReveal(
+          {
+            correct,
+            timed_out: personId === null,
+            streak: correct ? streak + 1 : 0,
+            finished: r.position >= r.total_rounds,
+            chosen_person_id: personId,
+            person: { ...right, image_license: null, image_source_url: null },
+            quote: null,
+            quote_id: null,
+          },
+          r.position,
+        );
+        buzz(correct ? 30 : [40, 40, 40]);
         busy.current = false;
-        setReveal(r);
-        setHistory((h) => ({ ...h, [round.position]: r.correct ? "correct" : "wrong" }));
-        setStreak(r.streak);
-        setPhase("reveal");
-        buzz(r.correct ? 30 : [40, 40, 40]);
+      } else {
+        setPhase("answering");
+      }
+
+      try {
+        const res = await sent;
+        if (answering.current !== sent) return;
+        showReveal(res, r.position);
+        if (!right) {
+          busy.current = false;
+          buzz(res.correct ? 30 : [40, 40, 40]);
+        }
       } catch (e) {
         fail(e);
       }
     },
-    [round, fail],
+    [round, key, streak, showReveal, fail],
   );
 
-  // tempo esgotado (reagendado se o curinga +5s mudar o prazo)
+  // tempo esgotado
   useEffect(() => {
     if (phase !== "question") return;
     const id = setTimeout(() => void answer(null), Math.max(0, deadline - Date.now()));
@@ -201,38 +257,28 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [phase, round, eliminated, answer]);
 
-  async function triggerJoker(name: JokerName) {
-    if (!round || busy.current || (jokers[name] ?? 0) < 1) return;
-    busy.current = true;
-    try {
-      const r = await playJoker(round.round_id, name);
-      setJokers(r.jokers);
-      if (name === "skip") {
-        setHistory((h) => ({ ...h, [round.position]: "skipped" }));
-        await loadRound(sessionId.current!);
-        return;
-      }
-      setEliminated(r.eliminated);
-      if (name === "time") {
-        setTotalSeconds(r.total_seconds);
-        setDeadline((d) => d + 5000);
-      }
-      busy.current = false;
-    } catch (e) {
-      fail(e);
-    }
-  }
-
   const advanceRef = useRef(advance);
   useEffect(() => {
     advanceRef.current = advance;
   });
 
   async function advance() {
-    if (busy.current || !sessionId.current) return;
+    const sid = sessionId.current;
+    if (busy.current || !sid) return;
     busy.current = true;
     try {
-      await loadRound(sessionId.current);
+      // a resposta quase sempre já voltou enquanto a revelação estava na tela
+      const res = await answering.current;
+      answering.current = null;
+      if (res?.summary) return finish(res.summary);
+      if (res?.next) {
+        const next = res.next;
+        // mostra já e liga o relógio no servidor em paralelo
+        serving.current = nextRound(sid);
+        serving.current.catch(fail);
+        return showRound({ ...next, seconds_left: next.total_seconds });
+      }
+      await loadRound(sid);
     } catch (e) {
       fail(e);
     }
@@ -313,7 +359,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
       <AnimatePresence>
         {revealed && verdict && (
           <motion.div
-            key={reveal.quote_id}
+            key={round.round_id}
             role="status"
             initial={{ y: -90, opacity: 0, rotate: -4 }}
             animate={{ y: 0, opacity: 1, rotate: -1.5 }}
@@ -408,7 +454,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
           key={round.round_id}
           initial={{ opacity: 0, x: 60 }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -60, transition: { duration: 0.2 } }}
+          exit={{ opacity: 0, x: -60, transition: { duration: 0.08 } }}
           transition={{ type: "spring", stiffness: 260, damping: 26 }}
           className="flex flex-col gap-4"
         >
@@ -455,29 +501,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
         </motion.div>
       </AnimatePresence>
 
-      {revealed && reveal.correct && <Confetti key={reveal.quote_id} />}
-
-      {/* curingas (somem na revelação) */}
-      <AnimatePresence initial={false}>
-        {!revealed && (
-          <motion.div key="jokers" exit={{ opacity: 0 }} className="flex justify-center gap-2">
-            {JOKERS.filter(({ name }) => name in jokers).map(({ name, label, icon: Icon }) => (
-              <motion.button
-                key={name}
-                type="button"
-                whileTap={{ scale: 0.9, rotate: -4 }}
-                disabled={phase !== "question" || (jokers[name] ?? 0) < 1}
-                onClick={() => void triggerJoker(name)}
-                className="btn-pop flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-sm backdrop-blur"
-              >
-                <Icon className="size-4" aria-hidden />
-                {label}
-                <span className="grid size-5 place-items-center rounded-full bg-white/15 text-xs">{jokers[name] ?? 0}</span>
-              </motion.button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {revealed && reveal.correct && <Confetti key={round.round_id} />}
 
       {/* revelação: painel por cima de tudo, sem precisar rolar a tela */}
       <AnimatePresence>
@@ -497,7 +521,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
               initial={{ y: "110%" }}
               animate={{ y: 0 }}
               exit={{ y: "110%" }}
-              transition={{ type: "spring", stiffness: 300, damping: 30, delay: 0.25 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30, delay: 0.1 }}
               className="fixed inset-x-0 bottom-0 z-30 px-2 md:px-8"
             >
               <div className="mx-auto flex max-w-md flex-col gap-4 rounded-t-[2rem] bg-[#1d1230]/95 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_-10px_40px_rgb(0_0_0/0.5)] ring-1 ring-white/10 backdrop-blur-xl md:max-w-3xl md:p-6">
@@ -512,34 +536,48 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
                   <div className="min-w-0">
                     <p className="text-xs font-bold uppercase tracking-widest text-white/50">Quem disse</p>
                     <p className="font-display text-2xl font-black leading-tight">{reveal.person.name}</p>
-                    {(reveal.quote.context || reveal.quote.said_on) && (
-                      <p className="line-clamp-2 text-sm text-white/60">
-                        {quoteDetail(reveal.quote.context, reveal.quote.said_on)}
-                      </p>
+                    {reveal.quote ? (
+                      (reveal.quote.context || reveal.quote.said_on) && (
+                        <p className="line-clamp-2 text-sm text-white/60">
+                          {quoteDetail(reveal.quote.context, reveal.quote.said_on)}
+                        </p>
+                      )
+                    ) : (
+                      <p className="mt-1 h-4 w-40 animate-pulse rounded bg-white/10" aria-hidden />
                     )}
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <a
-                    href={reveal.quote.source_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`${btnGhost} inline-flex items-center gap-2 px-4 text-sm`}
-                  >
-                    <ExternalLink className="size-4" aria-hidden />
-                    Fonte{reveal.quote.source_timestamp ? ` ${reveal.quote.source_timestamp}` : ""}
-                  </a>
-                  <ShareButton
-                    compact
-                    label="Compartilhar"
-                    className={`${btnGhost} px-4 text-sm`}
-                    image={{ url: `/api/card/frase/${reveal.quote_id}`, name: "quem-disse-isso.png" }}
-                    getData={() => ({
-                      title: "Quem Disse Isso?",
-                      text: "Você acertaria as outras?",
-                      url: `${window.location.origin}/q/${reveal.quote_id}`,
-                    })}
-                  />
+                  {reveal.quote && reveal.quote_id ? (
+                    <>
+                      <a
+                        href={reveal.quote.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${btnGhost} inline-flex items-center gap-2 px-4 text-sm`}
+                      >
+                        <ExternalLink className="size-4" aria-hidden />
+                        Fonte{reveal.quote.source_timestamp ? ` ${reveal.quote.source_timestamp}` : ""}
+                      </a>
+                      <ShareButton
+                        compact
+                        label="Compartilhar"
+                        className={`${btnGhost} px-4 text-sm`}
+                        image={{ url: `/api/card/frase/${reveal.quote_id}`, name: "quem-disse-isso.png" }}
+                        getData={() => ({
+                          title: "Quem Disse Isso?",
+                          text: "Você acertaria as outras?",
+                          url: `${window.location.origin}/q/${reveal.quote_id}`,
+                        })}
+                      />
+                    </>
+                  ) : (
+                    // fonte e compartilhar chegam com a confirmação do servidor
+                    <span className={`${btnGhost} inline-flex items-center gap-2 px-4 text-sm opacity-50`} aria-hidden>
+                      <ExternalLink className="size-4" />
+                      Fonte
+                    </span>
+                  )}
                   <button
                     type="button"
                     autoFocus
@@ -551,7 +589,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
                     <kbd className="hidden text-xs font-normal opacity-60 md:inline">Enter</kbd>
                   </button>
                 </div>
-                {(reveal.person.image_credit || reveal.quote.archive_url) && (
+                {(reveal.person.image_credit || reveal.quote?.archive_url) && (
                   <p className="text-center text-[11px] text-white/35">
                     {reveal.person.image_credit && (
                       <>
@@ -559,7 +597,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
                         {reveal.person.image_license && ` · ${reveal.person.image_license}`}
                       </>
                     )}
-                    {reveal.quote.archive_url && (
+                    {reveal.quote?.archive_url && (
                       <>
                         {reveal.person.image_credit && " · "}
                         <a href={reveal.quote.archive_url} target="_blank" rel="noopener noreferrer" className="underline">

@@ -8,26 +8,33 @@ type ShareData = { title: string; text: string; url: string };
 const isDesktop = () => typeof matchMedia === "function" && !matchMedia("(pointer: coarse)").matches;
 
 /**
+ * Texto com o link numa linha própria. O link vai dentro do texto (e não no campo `url`):
+ * alguns apps colam `url` grudado no texto e ele deixa de ser clicável.
+ */
+const message = (data: ShareData) => `${data.text}\n\n${data.url}`;
+
+/**
  * Celular: folha de compartilhamento nativa com a imagem (quando houver) + texto.
  * Computador: só texto e link. Na folha do macOS o WhatsApp Desktop cola o caminho
  * do arquivo como texto, e a prévia do link já mostra a imagem.
  */
 export async function share(data: ShareData, image?: File | null): Promise<ShareOutcome> {
+  const text = message(data);
   try {
     if (isDesktop()) {
       if (typeof navigator.share === "function") {
-        await navigator.share(data);
+        await navigator.share({ title: data.title, text });
         return "shared";
       }
-      await navigator.clipboard.writeText(`${data.text}\n${data.url}`);
+      await navigator.clipboard.writeText(text);
       return "copied";
     }
     if (image && navigator.canShare?.({ files: [image] })) {
-      await navigator.share({ files: [image], title: data.title, text: `${data.text}\n${data.url}` });
+      await navigator.share({ files: [image], title: data.title, text });
       return "shared";
     }
     if (!image && typeof navigator.share === "function") {
-      await navigator.share(data);
+      await navigator.share({ title: data.title, text });
       return "shared";
     }
     if (image) {
@@ -37,7 +44,7 @@ export async function share(data: ShareData, image?: File | null): Promise<Share
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     }
-    await navigator.clipboard.writeText(`${data.text}\n${data.url}`).catch(() => {});
+    await navigator.clipboard.writeText(text).catch(() => {});
     return image ? "downloaded" : "copied";
   } catch (e) {
     if (e instanceof DOMException && e.name === "AbortError") return "shared"; // usuário fechou a folha
