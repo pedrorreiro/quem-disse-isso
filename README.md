@@ -33,7 +33,7 @@ No desktop: teclas **1–4** escolhem a carta e **Enter** avança.
 1. Entre em `/admin` com seu e-mail (link mágico). Na primeira vez a tela mostra o SQL para virar admin:
    `insert into public.admins (user_id) values ('<seu id>');`
 2. **Frases**: fila de rascunhos, uma por vez. Dá para editar, salvar rascunho, rejeitar (com anotação) ou aprovar. Fonte do YouTube aparece embutida no minuto informado.
-3. **Todas as frases**: lista completa com busca (frase, pessoa ou contexto) e filtro por situação, com quantas vezes cada frase foi respondida e a taxa de acerto. Dá para editar uma frase que já está no jogo, **tirar do jogo** (fica como rejeitada, com o histórico das partidas preservado), voltar para rascunho ou aprovar de novo.
+3. **Todas as frases**: lista completa com busca (frase, pessoa ou contexto) e filtro por situação, com quantas vezes cada frase foi respondida e a taxa de acerto. Dá para editar uma frase que já está no jogo, **tirar do jogo** (fica como rejeitada), voltar para rascunho ou aprovar de novo. No filtro "Fora do jogo" dá para **apagar de vez**, uma a uma ou todas as mostradas.
 4. **Fotos**: cada pessoa precisa de foto aprovada. *Trocar foto* busca a pessoa no Wikidata e puxa a foto do Commons já com autor e licença.
 5. **Pessoas** / **Nova frase**: cadastro manual (frases novas entram como rascunho).
 

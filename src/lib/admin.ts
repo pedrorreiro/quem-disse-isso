@@ -84,6 +84,8 @@ export const adminOverview = () => rpc<Overview>("admin_overview");
 export const adminPeople = () => rpc<Person[]>("admin_people");
 export const adminQuoteQueue = () => rpc<DraftQuote[]>("admin_quote_queue");
 export const adminQuotes = () => rpc<AdminQuote[]>("admin_quotes");
+/** Apaga de vez uma frase rejeitada (o banco recusa as outras). */
+export const deleteQuote = (id: string) => rpc<null>("admin_delete_quote", { p_quote_id: id });
 
 export const reviewQuote = (id: string, action: ReviewAction, fields: QuoteFields = {}, note?: string) =>
   rpc<unknown>("admin_review_quote", { p_quote_id: id, p_action: action, p_fields: fields, p_note: note ?? null });

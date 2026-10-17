@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Search, Trash2 } from "lucide-react";
 import {
   adminPeople,
   adminQuotes,
+  deleteQuote,
   reviewQuote,
   type AdminQuote,
   type Person,
@@ -14,7 +15,7 @@ import {
 } from "@/lib/admin";
 import { friendlyError } from "@/lib/api";
 import { QuoteEditor } from "./QuoteReview";
-import { Avatar, input } from "./ui";
+import { Avatar, btnDanger, input } from "./ui";
 
 type Filter = "playable" | QuoteStatus | "all";
 
@@ -50,6 +51,8 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [deleting, setDeleting] = useState<string | "all" | null>(null);
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     Promise.all([adminQuotes(), adminPeople()])
@@ -104,6 +107,34 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
     onChanged();
   }
 
+  async function remove(list: AdminQuote[]) {
+    const label = list.length === 1 ? `“${list[0].text.slice(0, 80)}”` : `as ${list.length} frases fora do jogo mostradas`;
+    if (!window.confirm(`Apagar de vez ${label}? Não dá para desfazer.`)) return;
+    setDeleting(list.length === 1 ? list[0].id : "all");
+    setNotice("");
+    const gone = new Set<string>();
+    let failed = "";
+    for (const q of list) {
+      try {
+        await deleteQuote(q.id);
+        gone.add(q.id);
+      } catch (e) {
+        failed = friendlyError(e);
+      }
+    }
+    setQuotes((all) => all!.filter((x) => !gone.has(x.id)));
+    if (open && gone.has(open)) setOpen(null);
+    setDeleting(null);
+    setNotice(
+      failed
+        ? `${gone.size} apagada(s); ${list.length - gone.size} falharam: ${failed}`
+        : `${gone.size} frase${gone.size === 1 ? " apagada" : "s apagadas"}.`,
+    );
+    onChanged();
+  }
+
+  const deletable = shown.filter((q) => q.status === "rejected");
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
@@ -134,6 +165,19 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
         </div>
       </div>
 
+      {filter === "rejected" && deletable.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-rose-500/5 p-3 ring-1 ring-rose-500/20">
+          <p className="text-sm text-white/60">
+            Apagar remove a frase de vez, junto com as rodadas antigas em que ela apareceu. O placar das partidas já jogadas não muda.
+          </p>
+          <button type="button" className={`${btnDanger} inline-flex items-center gap-2`} disabled={!!deleting} onClick={() => remove(deletable)}>
+            <Trash2 className="size-4" aria-hidden />
+            {deleting === "all" ? "Apagando…" : `Apagar ${deletable.length === 1 ? "a frase mostrada" : `as ${deletable.length} mostradas`}`}
+          </button>
+        </div>
+      )}
+      {notice && <p className="text-sm text-white/60" role="status">{notice}</p>}
+
       {shown.length === 0 ? (
         <p className="rounded-2xl bg-white/5 p-8 text-center text-white/50">Nenhuma frase encontrada.</p>
       ) : (
@@ -142,12 +186,12 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
             const [label, cls] = statusBadge(q);
             const isOpen = open === q.id;
             return (
-              <li key={q.id} className="overflow-hidden rounded-2xl bg-white/[0.03] ring-1 ring-white/10">
+              <li key={q.id} className="flex flex-wrap overflow-hidden rounded-2xl bg-white/[0.03] ring-1 ring-white/10">
                 <button
                   type="button"
                   aria-expanded={isOpen}
                   onClick={() => setOpen(isOpen ? null : q.id)}
-                  className="flex w-full items-center gap-3 p-3 text-left hover:bg-white/[0.03] md:gap-4"
+                  className="flex min-w-0 flex-1 items-center gap-3 p-3 text-left hover:bg-white/[0.03] md:gap-4"
                 >
                   <Avatar url={q.person.image_url} name={q.person.name} className="size-12 shrink-0 rounded-lg text-[10px]" />
                   <div className="min-w-0 flex-1">
@@ -165,8 +209,20 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
                   </div>
                   <ChevronDown className={`size-5 shrink-0 text-white/40 transition ${isOpen ? "rotate-180" : ""}`} aria-hidden />
                 </button>
+                {q.status === "rejected" && (
+                  <button
+                    type="button"
+                    onClick={() => remove([q])}
+                    disabled={!!deleting}
+                    aria-label={`Apagar a frase de ${q.person.name}`}
+                    title="Apagar de vez"
+                    className="grid w-12 shrink-0 place-items-center self-stretch border-l border-white/10 text-rose-300/70 hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-40"
+                  >
+                    <Trash2 className="size-4" aria-hidden />
+                  </button>
+                )}
                 {isOpen && (
-                  <div className="border-t border-white/10 p-3 md:p-4">
+                  <div className="w-full border-t border-white/10 p-3 md:p-4">
                     <QuoteEditor
                       key={`${q.id}:${q.status}`}
                       quote={q}

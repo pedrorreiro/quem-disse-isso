@@ -53,6 +53,7 @@ const ERRORS: Record<string, string> = {
   not_enough_people: "O banco ainda precisa de mais pessoas cadastradas.",
   session_not_found: "Partida não encontrada. Comece uma nova.",
   challenge_not_found: "Esse desafio não existe.",
+  quote_not_rejected: "Só dá para apagar frases que estão fora do jogo.",
 };
 
 export function friendlyError(e: unknown): string {

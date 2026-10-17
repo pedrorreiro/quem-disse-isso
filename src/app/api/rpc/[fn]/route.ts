@@ -16,6 +16,7 @@ const FNS: Record<string, "session" | "user" | "public"> = {
   admin_people: "user",
   admin_quote_queue: "user",
   admin_quotes: "user",
+  admin_delete_quote: "user",
   admin_review_quote: "user",
   admin_create_quote: "user",
   admin_upsert_person: "user",
