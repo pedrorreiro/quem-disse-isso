@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Share2 } from "lucide-react";
 import { fetchImage, share } from "@/lib/share";
 
@@ -23,6 +23,7 @@ const NOTES = {
 export default function ShareButton({ label, getData, image, className = "", compact = false }: Props) {
   const [note, setNote] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const pending = useRef<Promise<File | null>>(Promise.resolve(null));
   const imageUrl = image?.url;
   const imageName = image?.name;
 
@@ -30,14 +31,16 @@ export default function ShareButton({ label, getData, image, className = "", com
   useEffect(() => {
     if (!imageUrl || !imageName) return;
     let live = true;
-    void fetchImage(imageUrl, imageName).then((f) => live && setFile(f));
+    pending.current = fetchImage(imageUrl, imageName);
+    void pending.current.then((f) => live && setFile(f));
     return () => {
       live = false;
     };
   }, [imageUrl, imageName]);
 
   async function onClick() {
-    const outcome = await share(getData(), file);
+    // toque antes de a imagem chegar: espera o download em vez de mandar só o link
+    const outcome = await share(getData(), file ?? (await pending.current));
     if (outcome === "shared") return;
     setNote(NOTES[outcome]);
     setTimeout(() => setNote(null), 2400);

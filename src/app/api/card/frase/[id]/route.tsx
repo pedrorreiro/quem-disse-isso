@@ -64,6 +64,6 @@ export async function GET(req: Request, ctx: RouteContext<"/api/card/frase/[id]"
         </div>
       </Frame>
     ),
-    { ...STORY, fonts, headers: { "cache-control": "public, max-age=86400" } },
+    { ...STORY, fonts, headers: { "cache-control": "public, max-age=86400, s-maxage=86400" } },
   );
 }
