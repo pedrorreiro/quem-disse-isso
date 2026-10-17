@@ -70,3 +70,60 @@ export function buzz(pattern: number | number[]) {
     /* sem suporte */
   }
 }
+
+// ── Sons ──────────────────────────────────────────────────────────────────────
+// Poucos e curtos, sintetizados na hora (sem arquivos): acerto, erro e fim da partida.
+// O jogador pode desligar; a escolha fica neste navegador.
+
+const MUTE_KEY = "qdi:som";
+let audio: AudioContext | null = null;
+
+export function soundOn() {
+  try {
+    return localStorage.getItem(MUTE_KEY) !== "off";
+  } catch {
+    return true;
+  }
+}
+
+export function setSoundOn(on: boolean) {
+  try {
+    localStorage.setItem(MUTE_KEY, on ? "on" : "off");
+  } catch {
+    /* storage bloqueado: vale só nesta visita */
+  }
+}
+
+/** Notas: [frequência em Hz, início em s, duração em s]. */
+type Note = [number, number, number];
+
+const SOUNDS: Record<"acerto" | "erro" | "fim", { wave: OscillatorType; volume: number; notes: Note[] }> = {
+  acerto: { wave: "triangle", volume: 0.18, notes: [[784, 0, 0.09], [1175, 0.08, 0.16]] },
+  erro: { wave: "sawtooth", volume: 0.07, notes: [[220, 0, 0.12], [165, 0.11, 0.22]] },
+  fim: { wave: "triangle", volume: 0.16, notes: [[523, 0, 0.1], [659, 0.1, 0.1], [784, 0.2, 0.1], [1047, 0.3, 0.3]] },
+};
+
+export function sfx(name: keyof typeof SOUNDS) {
+  if (!soundOn()) return;
+  try {
+    audio ??= new AudioContext();
+    if (audio.state === "suspended") void audio.resume();
+    const { wave, volume, notes } = SOUNDS[name];
+    const t0 = audio.currentTime + 0.01;
+    for (const [freq, start, dur] of notes) {
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      osc.type = wave;
+      osc.frequency.value = freq;
+      // ataque rápido e queda suave, para não estalar
+      gain.gain.setValueAtTime(0.0001, t0 + start);
+      gain.gain.exponentialRampToValueAtTime(volume, t0 + start + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + start + dur);
+      osc.connect(gain).connect(audio.destination);
+      osc.start(t0 + start);
+      osc.stop(t0 + start + dur + 0.02);
+    }
+  } catch {
+    /* sem Web Audio: segue sem som */
+  }
+}

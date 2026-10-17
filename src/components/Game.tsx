@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, Check, CircleCheck, CircleX, ExternalLink, Flame, Quote, TimerOff, X } from "lucide-react";
+import { ArrowRight, Check, CircleCheck, CircleX, ExternalLink, Flame, Quote, TimerOff, Volume2, VolumeX, X } from "lucide-react";
 import OptionCard, { type CardState } from "./OptionCard";
 import Results from "./Results";
 import ShareButton from "./ShareButton";
-import { Confetti, CountUp, buzz } from "./fx";
+import { Confetti, CountUp, buzz, setSoundOn, sfx, soundOn } from "./fx";
 import { answerRound, friendlyError, nextRound, startGame } from "@/lib/api";
 import { quoteDetail } from "@/lib/share";
 import type { GameMode, Reveal, Round, Summary } from "@/lib/types";
@@ -88,6 +88,8 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
   const [reveal, setReveal] = useState<RevealView | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
   const [openDetail, setOpenDetail] = useState<string | null>(null); // quote_id com o contexto aberto
+  // o cabeçalho só aparece depois da primeira rodada (no navegador), então ler a preferência aqui é seguro
+  const [sound, setSound] = useState(soundOn);
   const [summary, setSummary] = useState<Summary | null>(null);
   // resposta certa da rodada atual, conferida no navegador pela answer_key
   const [key, setKey] = useState<{ round: string; id: string } | null>(null);
@@ -111,6 +113,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
     (s: Summary) => {
       busy.current = false;
       storage(storageKey, null);
+      sfx("fim");
       setSummary(s);
       setPhase("finished");
     },
@@ -230,6 +233,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
           r.position,
         );
         buzz(correct ? 30 : [40, 40, 40]);
+        sfx(correct ? "acerto" : "erro");
         busy.current = false;
       } else {
         setPhase("answering");
@@ -242,6 +246,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
         if (!right) {
           busy.current = false;
           buzz(res.correct ? 30 : [40, 40, 40]);
+          sfx(res.correct ? "acerto" : "erro");
         }
       } catch (e) {
         fail(e);
@@ -398,6 +403,18 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
         >
           <X className="size-5" />
         </Link>
+        <button
+          type="button"
+          onClick={() => {
+            setSoundOn(!sound);
+            setSound(!sound);
+          }}
+          className="grid size-10 place-items-center rounded-full bg-white/10 text-white/70 transition hover:bg-white/20"
+          aria-label={sound ? "Desligar sons" : "Ligar sons"}
+          aria-pressed={!sound}
+        >
+          {sound ? <Volume2 className="size-5" /> : <VolumeX className="size-5" />}
+        </button>
 
         {/* progresso: uma bolinha por rodada */}
         <div className="flex flex-1 justify-center gap-1.5" aria-label={`Rodada ${round.position} de ${round.total_rounds}`}>

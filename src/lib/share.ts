@@ -4,8 +4,21 @@ export type ShareOutcome = "shared" | "copied" | "downloaded" | "failed";
 
 type ShareData = { title: string; text: string; url: string };
 
-/** Mouse como ponteiro principal: computador. */
-const isDesktop = () => typeof matchMedia === "function" && !matchMedia("(pointer: coarse)").matches;
+/**
+ * Computador = não é celular nem tablet. Pelo aparelho, e não por `(pointer: coarse)`: alguns
+ * navegadores de Mac (o Dia, por exemplo) não respondem a essa consulta como deveriam, e aí a imagem
+ * ia junto e o WhatsApp Desktop colava o caminho do arquivo no texto. O iPad se apresenta como Mac,
+ * mas tem toque.
+ */
+const isDesktop = () => {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  const mobile =
+    (navigator as Navigator & { userAgentData?: { mobile?: boolean } }).userAgentData?.mobile ||
+    /Android|iPhone|iPad|iPod|Mobile/i.test(ua) ||
+    (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  return !mobile;
+};
 
 /**
  * Texto com o link numa linha própria. O link vai dentro do texto (e não no campo `url`):
