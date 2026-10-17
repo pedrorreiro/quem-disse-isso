@@ -32,14 +32,14 @@ export default function Credits() {
       {!credits ? (
         <p className="animate-pulse text-white/50">Carregando…</p>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {credits.map((c) => (
-            <li key={c.name} className="flex items-center gap-3 rounded-xl bg-white/5 p-3 text-sm">
+            <li key={c.name} className="flex min-w-0 items-center gap-3 rounded-xl bg-white/5 p-3 text-sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={c.image_url} alt="" className="size-12 shrink-0 rounded-lg object-cover" />
               <div className="min-w-0">
                 <p className="font-semibold">{c.name}</p>
-                <p className="truncate text-white/50">
+                <p className="text-white/50 [overflow-wrap:anywhere]">
                   {c.image_credit ?? "Autor desconhecido"} · {c.image_license ?? "—"}
                   {c.image_source_url && (
                     <>
