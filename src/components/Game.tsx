@@ -536,7 +536,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
                     image={{ url: `/api/card/frase/${reveal.quote_id}`, name: "quem-disse-isso.png" }}
                     getData={() => ({
                       title: "Quem Disse Isso?",
-                      text: `“${reveal.quote.text}” (${reveal.person.name})`,
+                      text: "Você acertaria as outras?",
                       url: `${window.location.origin}/q/${reveal.quote_id}`,
                     })}
                   />

@@ -85,7 +85,7 @@ export default function QuoteShared({ quote }: { quote: QuotePublic | null }) {
           image={{ url: `/api/card/frase/${quote.id}`, name: "quem-disse-isso.png" }}
           getData={() => ({
             title: "Quem Disse Isso?",
-            text: `“${quote.text}” (${person.name})`,
+            text: "Você acertaria as outras?",
             url: `${window.location.origin}/q/${quote.id}`,
           })}
         />
