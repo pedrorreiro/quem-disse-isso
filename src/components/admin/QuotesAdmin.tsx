@@ -26,6 +26,14 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "all", label: "Todas" },
 ];
 
+type KindFilter = "all" | "iconica" | "polemica";
+
+const KIND_FILTERS: { id: KindFilter; label: string }[] = [
+  { id: "all", label: "Todos os tipos" },
+  { id: "iconica", label: "Icônicas" },
+  { id: "polemica", label: "Polêmicas" },
+];
+
 const NEXT_STATUS: Record<ReviewAction, QuoteStatus | null> = {
   approve: "verified",
   reject: "rejected",
@@ -40,6 +48,8 @@ function statusBadge(q: AdminQuote): [string, string] {
   return ["Fora do jogo", "bg-rose-500/15 text-rose-300"];
 }
 
+const inStatus = (q: AdminQuote, f: Filter) => (f === "playable" ? q.playable : f === "all" || q.status === f);
+
 /** Sem acento e em minúsculas, para a busca achar "joao" em "João". */
 const fold = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -48,6 +58,8 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
   const [quotes, setQuotes] = useState<AdminQuote[] | null>(null);
   const [people, setPeople] = useState<Person[]>([]);
   const [filter, setFilter] = useState<Filter>("playable");
+  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
+  const [toggling, setToggling] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -73,14 +85,26 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
     return c;
   }, [quotes]);
 
+  // contagem por tipo dentro da situação escolhida
+  const kindCounts = useMemo(() => {
+    const c: Record<KindFilter, number> = { all: 0, iconica: 0, polemica: 0 };
+    for (const q of quotes ?? []) {
+      if (!inStatus(q, filter)) continue;
+      c.all++;
+      c[q.kind ?? "polemica"]++;
+    }
+    return c;
+  }, [quotes, filter]);
+
   const shown = useMemo(() => {
     const words = fold(query).split(/\s+/).filter(Boolean);
     return (quotes ?? []).filter((q) => {
-      if (filter === "playable" ? !q.playable : filter !== "all" && q.status !== filter) return false;
+      if (!inStatus(q, filter)) return false;
+      if (kindFilter !== "all" && (q.kind ?? "polemica") !== kindFilter) return false;
       const hay = fold(`${q.text} ${q.person.name} ${q.context ?? ""}`);
       return words.every((w) => hay.includes(w));
     });
-  }, [quotes, filter, query]);
+  }, [quotes, filter, kindFilter, query]);
 
   if (error) return <p className="text-rose-300">{error}</p>;
   if (!quotes) return <p className="animate-pulse text-white/50">Carregando frases…</p>;
@@ -105,6 +129,20 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
     );
     if (action !== "save") setOpen(null);
     onChanged();
+  }
+
+  async function toggleKind(q: AdminQuote) {
+    const kind = q.kind === "iconica" ? "polemica" : "iconica";
+    const set = (k: AdminQuote["kind"]) => setQuotes((all) => all!.map((x) => (x.id === q.id ? { ...x, kind: k } : x)));
+    setToggling(q.id);
+    set(kind);
+    try {
+      await reviewQuote(q.id, "save", { kind });
+    } catch (e) {
+      set(q.kind);
+      setNotice(`Não deu para trocar o tipo: ${friendlyError(e)}`);
+    }
+    setToggling(null);
   }
 
   async function remove(list: AdminQuote[]) {
@@ -165,6 +203,28 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
         </div>
       </div>
 
+      <div className="flex w-fit gap-1 overflow-x-auto rounded-xl bg-white/5 p-1" role="group" aria-label="Filtrar por tipo">
+        {KIND_FILTERS.map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            aria-pressed={kindFilter === f.id}
+            onClick={() => setKindFilter(f.id)}
+            className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-semibold ${
+              kindFilter !== f.id
+                ? "text-white/70 hover:bg-white/5"
+                : f.id === "iconica"
+                  ? "bg-cyan text-neutral-950"
+                  : f.id === "polemica"
+                    ? "bg-pink text-white"
+                    : "bg-amber-400 text-neutral-950"
+            }`}
+          >
+            {f.label} <span className="opacity-60">{kindCounts[f.id]}</span>
+          </button>
+        ))}
+      </div>
+
       {filter === "rejected" && deletable.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-rose-500/5 p-3 ring-1 ring-rose-500/20">
           <p className="text-sm text-white/60">
@@ -199,7 +259,6 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/50">
                       <span className="font-semibold text-white/70">{q.person.name}</span>
                       <span className={`rounded-full px-2 py-0.5 font-semibold ${cls}`}>{label}</span>
-                      <span className={q.kind === "iconica" ? "text-cyan" : "text-pink"}>{q.kind === "iconica" ? "Icônica" : "Polêmica"}</span>
                       {q.plays > 0 && (
                         <span>
                           {q.plays} {q.plays === 1 ? "resposta" : "respostas"} · {Math.round((100 * q.hits) / q.plays)}% de acerto
@@ -209,6 +268,23 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
                     </p>
                   </div>
                   <ChevronDown className={`size-5 shrink-0 text-white/40 transition ${isOpen ? "rotate-180" : ""}`} aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={q.kind === "iconica"}
+                  aria-label={`Frase de ${q.person.name} é ${q.kind === "iconica" ? "icônica" : "polêmica"}. Trocar o tipo`}
+                  title="Trocar entre icônica e polêmica"
+                  onClick={() => toggleKind(q)}
+                  disabled={toggling === q.id}
+                  className="flex w-24 shrink-0 flex-col items-center justify-center gap-1.5 self-stretch border-l border-white/10 text-[11px] font-semibold hover:bg-white/[0.03] disabled:opacity-60"
+                >
+                  <span className={`relative h-5 w-9 rounded-full transition-colors ${q.kind === "iconica" ? "bg-cyan" : "bg-pink"}`} aria-hidden>
+                    <span
+                      className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-all ${q.kind === "iconica" ? "left-0.5" : "left-[18px]"}`}
+                    />
+                  </span>
+                  <span className={q.kind === "iconica" ? "text-cyan" : "text-pink"}>{q.kind === "iconica" ? "Icônica" : "Polêmica"}</span>
                 </button>
                 {q.status === "rejected" && (
                   <button
@@ -225,7 +301,7 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
                 {isOpen && (
                   <div className="w-full border-t border-white/10 p-3 md:p-4">
                     <QuoteEditor
-                      key={`${q.id}:${q.status}`}
+                      key={`${q.id}:${q.status}:${q.kind}`}
                       quote={q}
                       people={people}
                       onAct={(action, fields, note) => act(q, action, fields, note)}
