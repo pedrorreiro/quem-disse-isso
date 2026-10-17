@@ -2,7 +2,16 @@
 
 Guia para montar uma carga nova (`supabase/carga-NN-<tema>.sql`), por uma pessoa ou por um agente. O padrão a seguir é a [carga 4](carga-04-youtubers.sql).
 
-## 1. O que entra: só frase que deu polêmica de verdade
+## 0. Dois tipos de frase
+
+Toda frase tem um `kind`, e o jogador escolhe na home qual quer jogar (o padrão é Icônicas):
+
+- **`polemica`**: deu repercussão de verdade. É o critério da seção 1 abaixo.
+- **`iconica`**: bordão, meme ou fala que o público sabe de cor ("Ô loco, meu!", "Vamos fazer um sarau?"). Não precisa ter dado treta, mas precisa ser famosa: a pessoa ouve e lembra na hora. Frase séria, desabafo ou opinião morna não entra em nenhum dos dois tipos.
+
+Reality Show é sempre `iconica`. Nas outras categorias, cada frase recebe o tipo que melhor descreve por que ela é lembrada.
+
+## 1. Polêmica: só frase que deu polêmica de verdade
 
 A pergunta que decide é: **a frase em si virou notícia como polêmica?** Quem lê tem que pensar "não acredito que essa pessoa disse isso". Tem que ser algo que rodaria no Twitter/X.
 
@@ -15,7 +24,7 @@ Entra se a fala gerou pelo menos uma destas coisas:
 **Não entra:**
 - **Treta leve ou palavrão sem repercussão.** Exemplo recusado: "Fútil é o c*ralho, eu elogiei o boy que você estava" (Mítico). É só uma resposta malcriada, e ninguém compartilharia.
 - **Fala hipotética**, como "hoje eu responderia assim…". Tem que ser o que a pessoa disse de fato.
-- **Frase genérica ou solta**: conselho, bordão, opinião morna, frase motivacional.
+- **Frase genérica ou solta**: conselho, opinião morna, frase motivacional. (Bordão famoso entra, mas como `iconica`.)
 - **Frase de outra pessoa** que a pessoa só compartilhou. Exemplo: "Não tem pobreza que resista a 14 horas de trabalho" é do Geraldo Rufino, não do Thiago Nigro.
 - **Acusação sem prova contra alguém**, a menos que a própria fala seja o escândalo e a matéria trate como tal.
 - **Assuntos que só machucam**, como aborto espontâneo ou morte de alguém próximo, ou casos de abuso infantil.
@@ -47,6 +56,7 @@ Fonte principal, em ordem de preferência: **CNN Brasil, g1, O Globo, Folha, Ter
 - **text**: a fala literal. Prefira o trecho mais chocante e que se entende sozinho.
 - **context**: 1 a 3 frases que explicam onde a fala foi dita e o que veio depois. É o que o jogador lê depois de responder, então precisa deixar claro por que a frase foi polêmica.
 - **source_type**: `video` (podcast, live ou vídeo), `post` (tuíte ou story), `entrevista`, `materia`, `discurso` ou `musica`.
+- **kind**: `'polemica'` ou `'iconica'` (veja a seção 0). Se faltar, o banco grava `polemica`.
 - **difficulty**:
   - `1` é a frase que quase todo mundo associa à pessoa (o partido nazista do Monark);
   - `2` é conhecida no nicho;

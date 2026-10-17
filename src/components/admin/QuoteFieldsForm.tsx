@@ -110,7 +110,7 @@ export default function QuoteFieldsForm({ value, onChange, people, showAuthor = 
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-[1fr_160px_160px]">
+      <div className="grid gap-4 sm:grid-cols-[1fr_150px_150px_150px]">
         <Field label="Contexto (aparece na revelação)" hint="Neutro, só o dado. Ex.: Entrevista ao Fantástico">
           <input
             className={input}
@@ -127,6 +127,16 @@ export default function QuoteFieldsForm({ value, onChange, people, showAuthor = 
             <option value={1}>1 — fácil</option>
             <option value={2}>2 — médio</option>
             <option value={3}>3 — difícil</option>
+          </select>
+        </Field>
+        <Field label="Tipo" hint="Icônica: bordão ou meme. Polêmica: deu repercussão.">
+          <select
+            className={input}
+            value={value.kind ?? "polemica"}
+            onChange={(e) => set("kind", e.target.value as "iconica" | "polemica")}
+          >
+            <option value="iconica">Icônica</option>
+            <option value="polemica">Polêmica</option>
           </select>
         </Field>
         <Field label="Vibe (interna)">

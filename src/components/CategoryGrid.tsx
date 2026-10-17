@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { listCategories, myProgress } from "@/lib/api";
 import { categoryLabel } from "@/lib/share";
+import { useKind } from "@/lib/useKind";
+import KindSwitch from "./KindSwitch";
 import type { CategoryInfo, CategoryProgress } from "@/lib/types";
 
 const ICON: Record<string, LucideIcon> = {
@@ -118,21 +120,25 @@ function Tile({
 export default function CategoryGrid() {
   const [categories, setCategories] = useState<CategoryInfo[] | null>(null);
   const [failed, setFailed] = useState(false);
-  const [progress, setProgress] = useState<Map<string, CategoryProgress>>(new Map());
+  const [progressList, setProgressList] = useState<CategoryProgress[] | null>(null);
+  const [kind] = useKind();
 
   useEffect(() => {
     listCategories()
       .then(setCategories)
       .catch(() => setFailed(true));
     myProgress()
-      .then((list) => setProgress(new Map(list.map((p) => [p.category, p]))))
+      .then(setProgressList)
       .catch(() => {});
   }, []);
 
+  // progresso só do tipo escolhido; categoria sem frase desse tipo some da tela
+  const progress = new Map((progressList ?? []).filter((p) => p.kind === kind).map((p) => [p.category, p]));
+  const visible = categories?.filter((c) => !progressList || progress.has(c.id));
   const all = [...progress.values()].reduce((a, p) => ({ seen: a.seen + p.seen, total: a.total + p.total }), { seen: 0, total: 0 });
 
-  const total = categories?.reduce((n, c) => n + c.people, 0) ?? 0;
-  const mixFaces = categories?.flatMap((c) => c.faces.slice(0, 1)).slice(0, 4) ?? [];
+  const total = visible?.reduce((n, c) => n + c.people, 0) ?? 0;
+  const mixFaces = visible?.flatMap((c) => c.faces.slice(0, 1)).slice(0, 4) ?? [];
 
   return (
     <div className="flex flex-1 flex-col gap-6 py-6 md:py-10">
@@ -146,6 +152,8 @@ export default function CategoryGrid() {
         </div>
       </header>
 
+      <KindSwitch className="md:max-w-md" />
+
       {failed && <p className="text-center text-white/70">Não deu para carregar as categorias. Tente de novo.</p>}
 
       {!categories && !failed && (
@@ -156,7 +164,7 @@ export default function CategoryGrid() {
         </div>
       )}
 
-      {categories && (
+      {visible && (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           <Tile
             href="/jogar"
@@ -169,7 +177,7 @@ export default function CategoryGrid() {
             wide
             progress={all.total > 0 ? all : undefined}
           />
-          {categories.map((c, i) => (
+          {visible.map((c, i) => (
             <Tile
               key={c.id}
               href={`/jogar?cat=${encodeURIComponent(c.id)}`}

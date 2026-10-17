@@ -1,3 +1,4 @@
+import type { Kind } from "./kind";
 import type { CategoryInfo, CategoryProgress, Challenge, GameMode, Reveal, Round, Summary } from "./types";
 
 /** Tudo passa pelo servidor do Next (/api/*): o navegador não fala com o Supabase. */
@@ -18,13 +19,14 @@ export const rpc = <T>(fn: string, args?: Record<string, unknown>) =>
 
 export async function startGame(
   mode: GameMode,
-  opts: { category?: string; quoteId?: string; challengeId?: string } = {},
+  opts: { category?: string; quoteId?: string; challengeId?: string; kind?: Kind } = {},
 ) {
   if (mode === "challenge") return rpc<string>("start_challenge", { p_challenge_id: opts.challengeId });
   return rpc<string>("start_game", {
     p_mode: mode,
     ...(opts.category ? { p_category: opts.category } : {}),
     ...(opts.quoteId ? { p_quote_id: opts.quoteId } : {}),
+    ...(opts.kind ? { p_kind: opts.kind } : {}),
   });
 }
 

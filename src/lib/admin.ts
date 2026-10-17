@@ -51,6 +51,7 @@ export type QuoteFields = {
   source_timestamp?: string | null;
   archive_url?: string | null;
   difficulty?: number;
+  kind?: "iconica" | "polemica";
 };
 
 export type DraftQuote = Required<Pick<QuoteFields, "text" | "source_url" | "difficulty">> &

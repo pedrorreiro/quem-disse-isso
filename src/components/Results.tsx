@@ -10,6 +10,7 @@ import ChallengeSheet from "./ChallengeSheet";
 import { Confetti, CountUp } from "./fx";
 import { createChallenge, getChallenge, myProgress } from "@/lib/api";
 import { categoryLabel, resultCode } from "@/lib/share";
+import { KIND_ADJ, type Kind } from "@/lib/kind";
 import type { Challenge, Summary } from "@/lib/types";
 
 const btnPrimary = "btn-pop bg-lime text-ink text-lg";
@@ -59,8 +60,8 @@ function Versus({ summary, rival }: { summary: Summary; rival: Challenge }) {
 }
 
 /** Quantas frases da categoria (ou do jogo todo) o jogador já descobriu; avisa quando acabaram. */
-function Discovered({ seen, total, category }: { seen: number; total: number; category?: string }) {
-  const where = category ? ` de ${categoryLabel(category)}` : "";
+function Discovered({ seen, total, category, kind }: { seen: number; total: number; category?: string; kind?: Kind }) {
+  const where = `${kind ? ` ${KIND_ADJ[kind]}` : ""}${category ? ` de ${categoryLabel(category)}` : ""}`;
   if (seen >= total) {
     return (
       <motion.div {...pop(0.7)} className="flex items-start gap-3 rounded-3xl bg-grape/40 p-4 ring-1 ring-white/10 md:backdrop-blur md:mx-auto md:w-full md:max-w-md">
@@ -91,10 +92,12 @@ function Discovered({ seen, total, category }: { seen: number; total: number; ca
 export default function Results({
   summary,
   category,
+  kind,
   onReplay,
 }: {
   summary: Summary;
   category?: string;
+  kind?: Kind;
   onReplay?: () => void;
 }) {
   const isDaily = summary.mode === "daily";
@@ -108,12 +111,12 @@ export default function Results({
     if (summary.mode !== "solo") return;
     myProgress()
       .then((list) => {
-        const mine = list.filter((p) => !category || p.category === category);
+        const mine = list.filter((p) => (!category || p.category === category) && (!kind || p.kind === kind));
         const total = mine.reduce((n, p) => n + p.total, 0);
         if (total > 0) setDiscovered({ seen: mine.reduce((n, p) => n + p.seen, 0), total });
       })
       .catch(() => {});
-  }, [summary.mode, summary.session_id, category]);
+  }, [summary.mode, summary.session_id, category, kind]);
 
   // o desafio já fica criado ao terminar, para o link sair na hora do toque
   useEffect(() => {
@@ -177,7 +180,7 @@ export default function Results({
         </dl>
       )}
 
-      {discovered && <Discovered {...discovered} category={category} />}
+      {discovered && <Discovered {...discovered} category={category} kind={kind} />}
 
       <motion.div {...pop(0.75)} className="mt-auto flex flex-col gap-3 md:mx-auto md:w-full md:max-w-md">
         {canChallenge && (

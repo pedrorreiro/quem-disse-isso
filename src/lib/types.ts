@@ -84,4 +84,4 @@ export type Challenge = {
 export type CategoryInfo = { id: string; people: number; faces: string[] };
 
 /** Frases jogáveis de uma categoria e quantas o jogador já respondeu. */
-export type CategoryProgress = { category: string; total: number; seen: number };
+export type CategoryProgress = { category: string; kind: "iconica" | "polemica"; total: number; seen: number };

@@ -9,13 +9,14 @@ import Results from "./Results";
 import ShareButton from "./ShareButton";
 import { Confetti, CountUp, buzz, setSoundOn, sfx, soundOn } from "./fx";
 import { answerRound, friendlyError, nextRound, startGame } from "@/lib/api";
+import { storedKind, type Kind } from "@/lib/kind";
 import { quoteDetail } from "@/lib/share";
 import { sha256Hex } from "@/lib/sha256";
 import type { GameMode, Reveal, Round, Summary } from "@/lib/types";
 
 type Phase = "loading" | "question" | "answering" | "reveal" | "finished" | "error";
 
-type Props = { mode: GameMode; category?: string; quoteId?: string; challengeId?: string };
+type Props = { mode: GameMode; category?: string; quoteId?: string; challengeId?: string; kind?: Kind };
 
 /** O que a revelação mostra. Fonte e contexto chegam do servidor logo depois (quote = null até lá). */
 type RevealView = Pick<Reveal, "correct" | "timed_out" | "streak" | "finished" | "chosen_person_id" | "person"> & {
@@ -112,7 +113,7 @@ function TimeBar({
   );
 }
 
-export default function Game({ mode, category, quoteId, challengeId }: Props) {
+export default function Game({ mode, category, quoteId, challengeId, kind: kindProp }: Props) {
   const [phase, setPhase] = useState<Phase>("loading");
   const [error, setError] = useState("");
   const [round, setRound] = useState<Round | null>(null);
@@ -138,7 +139,9 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
   const serving = useRef<Promise<unknown>>(Promise.resolve());
   // resposta em andamento; traz a próxima rodada (ou o resumo) para o "Próxima" não esperar
   const answering = useRef<Promise<Reveal> | null>(null);
-  const storageKey = `qdi:sid:${mode}:${category ?? ""}:${quoteId ?? ""}`;
+  // só o solo filtra por tipo; sem ?tipo na URL, vale a escolha da home
+  const [kind] = useState<Kind | undefined>(() => (mode === "solo" ? (kindProp ?? storedKind()) : undefined));
+  const storageKey = `qdi:sid:${mode}:${category ?? ""}:${kind ?? ""}:${quoteId ?? ""}`;
 
   const fail = useCallback((e: unknown) => {
     busy.current = false;
@@ -198,7 +201,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
             storage(storageKey, null);
           }
         }
-        const sid = await startGame(mode, { category, quoteId, challengeId });
+        const sid = await startGame(mode, { category, quoteId, challengeId, kind });
         sessionId.current = sid;
         if (mode === "solo") storage(storageKey, sid);
         await loadRound(sid);
@@ -206,7 +209,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
         fail(e);
       }
     },
-    [mode, category, quoteId, challengeId, storageKey, loadRound, fail],
+    [mode, category, quoteId, challengeId, kind, storageKey, loadRound, fail],
   );
 
   useEffect(() => {
@@ -365,7 +368,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
   }
 
   if (phase === "finished" && summary) {
-    return <Results summary={summary} category={category} onReplay={() => void begin(true)} />;
+    return <Results summary={summary} category={category} kind={kind} onReplay={() => void begin(true)} />;
   }
 
   if (!round) return null;

@@ -100,4 +100,7 @@ select id, 'Eu tenho pedigree', 'pt', null, 'Na briga com Caique Aguiar em A Faz
 from people where slug = 'nadja-pessoa'
   and not exists (select 1 from quotes where text = 'Eu tenho pedigree');
 
+-- Reality é sempre icônica (coluna kind, migração 20261027000000_tipo_frase).
+update quotes q set kind = 'iconica' from people p where p.id = q.person_id and p.category = 'reality' and q.kind <> 'iconica';
+
 commit;

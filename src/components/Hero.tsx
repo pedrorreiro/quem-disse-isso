@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { CalendarDays, LayoutGrid, Play, Quote } from "lucide-react";
+import KindSwitch from "./KindSwitch";
 
 function Letters({ text, className, delay }: { text: string; className?: string; delay: number }) {
   return (
@@ -56,6 +57,7 @@ export default function Hero() {
         transition={{ type: "spring", stiffness: 260, damping: 22, delay: 0.9 }}
         className="flex flex-col gap-4 md:mx-auto md:w-full md:max-w-md"
       >
+        <KindSwitch />
         <Link href="/jogar" className="btn-pop flex items-center justify-center gap-2 bg-lime py-5 font-display text-2xl font-black text-ink">
           <Play className="size-6 fill-ink" aria-hidden />
           Jogar

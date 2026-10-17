@@ -199,6 +199,7 @@ export default function QuotesAdmin({ onChanged }: { onChanged: () => void }) {
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/50">
                       <span className="font-semibold text-white/70">{q.person.name}</span>
                       <span className={`rounded-full px-2 py-0.5 font-semibold ${cls}`}>{label}</span>
+                      <span className={q.kind === "iconica" ? "text-cyan" : "text-pink"}>{q.kind === "iconica" ? "Icônica" : "Polêmica"}</span>
                       {q.plays > 0 && (
                         <span>
                           {q.plays} {q.plays === 1 ? "resposta" : "respostas"} · {Math.round((100 * q.hits) / q.plays)}% de acerto

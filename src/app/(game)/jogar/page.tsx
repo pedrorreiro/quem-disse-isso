@@ -1,7 +1,10 @@
 import Game from "@/components/Game";
+import { asKind } from "@/lib/kind";
 
 export default async function Jogar({ searchParams }: PageProps<"/jogar">) {
-  const { cat } = await searchParams;
+  const { cat, tipo } = await searchParams;
   const category = typeof cat === "string" && cat ? cat : undefined;
-  return <Game key={category ?? "all"} mode="solo" category={category} />;
+  // sem ?tipo, vale o que o jogador escolheu na home (Icônicas por padrão)
+  const kind = asKind(tipo);
+  return <Game key={`${category ?? "all"}:${kind ?? ""}`} mode="solo" category={category} kind={kind} />;
 }

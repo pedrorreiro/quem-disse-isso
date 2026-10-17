@@ -129,4 +129,7 @@ select id, 'Aliás, uma das criaturas que mais me fazem dar risada, é a criatur
 from people where slug = 'rodolffo'
   and not exists (select 1 from quotes where text = 'Aliás, uma das criaturas que mais me fazem dar risada, é a criatura gay.');
 
+-- Reality é sempre icônica (coluna kind, migração 20261027000000_tipo_frase).
+update quotes q set kind = 'iconica' from people p where p.id = q.person_id and p.category = 'reality' and q.kind <> 'iconica';
+
 commit;

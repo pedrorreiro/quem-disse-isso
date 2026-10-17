@@ -18,7 +18,7 @@ import QuoteFieldsForm from "./QuoteFieldsForm";
 import { Avatar, Field, PhotoBadge, btnDanger, btnGhost, btnOk, input } from "./ui";
 
 const EDITABLE: (keyof QuoteFields)[] = [
-  "person_id", "text", "said_on", "context", "vibe", "source_type", "source_url", "source_timestamp", "archive_url", "difficulty",
+  "person_id", "text", "said_on", "context", "vibe", "source_type", "source_url", "source_timestamp", "archive_url", "difficulty", "kind",
 ];
 
 function pickFields(q: DraftQuote): QuoteFields {
