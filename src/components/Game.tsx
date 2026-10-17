@@ -77,6 +77,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
   const [streak, setStreak] = useState(0);
   const [reveal, setReveal] = useState<Reveal | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
+  const [openDetail, setOpenDetail] = useState<string | null>(null); // quote_id com o contexto aberto
   const [summary, setSummary] = useState<Summary | null>(null);
 
   const sessionId = useRef<string | null>(null);
@@ -513,9 +514,17 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
                     <p className="text-xs font-bold uppercase tracking-widest text-white/50">Quem disse</p>
                     <p className="font-display text-2xl font-black leading-tight">{reveal.person.name}</p>
                     {(reveal.quote.context || reveal.quote.said_on) && (
-                      <p className="line-clamp-2 text-sm text-white/60">
+                      // toque abre o contexto inteiro; o painel cresce para cima
+                      <button
+                        type="button"
+                        aria-expanded={openDetail === reveal.quote_id}
+                        onClick={() => setOpenDetail((id) => (id === reveal.quote_id ? null : reveal.quote_id))}
+                        className={`block text-left text-sm text-white/60 transition-colors hover:text-white/80 ${
+                          openDetail === reveal.quote_id ? "max-h-[45vh] overflow-y-auto" : "line-clamp-2"
+                        }`}
+                      >
                         {quoteDetail(reveal.quote.context, reveal.quote.said_on)}
-                      </p>
+                      </button>
                     )}
                   </div>
                 </div>

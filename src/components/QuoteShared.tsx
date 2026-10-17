@@ -49,7 +49,7 @@ export default function QuoteShared({ quote }: { quote: QuotePublic | null }) {
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-widest text-white/50">Quem disse</p>
             <p className="font-display text-2xl font-black leading-tight text-lime md:text-3xl">{person.name}</p>
-            {detail && <p className="line-clamp-2 text-sm text-white/60">{detail}</p>}
+            {detail && <p className="text-sm text-white/60">{detail}</p>}
           </div>
         </figcaption>
       </motion.figure>

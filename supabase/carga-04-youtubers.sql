@@ -1,4 +1,4 @@
--- Carga 4: categoria Youtubers (22 frases). Só falas que deram polêmica de verdade, conferidas em veículos grandes
+-- Carga 4: categoria Youtubers (19 frases). Só falas que deram polêmica de verdade, conferidas em veículos grandes
 -- (CNN Brasil, Terra, Metrópoles, Correio Braziliense, Aos Fatos). Tudo entra como RASCUNHO: nada fica jogável até você aprovar
 -- em /admin → Fila de revisão. Pessoas novas entram sem foto (aprove em /admin → Fotos).
 -- Pode rodar mais de uma vez: não duplica pessoas nem frases.
@@ -20,12 +20,9 @@ insert into people (name, slug, category, area, gender, country, bio_short) valu
   ('Viih Tube', 'viih-tube', 'youtubers', 'internet', 'f', 'BR', 'Youtuber e ex-BBB 21'),
   ('Rica Perrone', 'rica-perrone', 'youtubers', 'internet', 'm', 'BR', 'Jornalista esportivo e youtuber'),
   ('Toguro', 'toguro', 'youtubers', 'internet', 'm', 'BR', 'Youtuber fitness, dono da Mansão Maromba'),
-  ('Thiago Nigro', 'thiago-nigro', 'youtubers', 'internet', 'm', 'BR', 'Youtuber de finanças, o Primo Rico'),
-  ('Mítico', 'mitico', 'youtubers', 'internet', 'm', 'BR', 'Youtuber, coapresentador do Podpah'),
   ('Igão', 'igao', 'youtubers', 'internet', 'm', 'BR', 'Youtuber, coapresentador do Podpah'),
   ('Léo Lins', 'leo-lins', 'youtubers', 'internet', 'm', 'BR', 'Humorista de stand-up com especiais no YouTube'),
-  ('Paulo Figueiredo', 'paulo-figueiredo', 'youtubers', 'internet', 'm', 'BR', 'Influenciador bolsonarista com programa semanal em vídeo'),
-  ('Nath Finanças', 'nath-financas', 'youtubers', 'internet', 'f', 'BR', 'Youtuber de educação financeira')
+  ('Paulo Figueiredo', 'paulo-figueiredo', 'youtubers', 'internet', 'm', 'BR', 'Influenciador bolsonarista com programa semanal em vídeo')
 on conflict (slug) do nothing;
 
 -- monark
@@ -110,23 +107,11 @@ select id, 'A minha bebida não é energético. Não tem cafeína, é sabor ener
 from people where slug = 'toguro'
   and not exists (select 1 from quotes where text = 'A minha bebida não é energético. Não tem cafeína, é sabor energético');
 
--- thiago-nigro
-insert into quotes (person_id, text, language, said_on, context, source_type, source_url, source_timestamp, difficulty, status, review_note)
-select id, 'Alguns influenciam os outros a fumarem maconha o dia inteiro e xingam uns aos outros', 'pt', '2023-08-12', 'Respondendo a Marcelo D2, que debochou dele no Podpah depois da polêmica do post ''Não tem pobreza que resista a 14 horas de trabalho''. Completou dizendo que outros ''incentivam pessoas a trabalharem e irem atrás de seus sonhos''.', 'post', 'https://www.terra.com.br/diversao/gente/primo-rico-troca-farpas-com-marcelo-d2-apos-deboche-de-rapper-maconha-o-dia-inteiro,9302759f7bc8fcb7c5fe65e0bf984a683erh9dvy.html', null, 3, 'draft', 'Fonte: Terra · Por que: Briga pública entre o coach do dinheiro e o rapper da maconha · Obs.: Texto conferido na matéria. Pessoa nova: aprove a foto em /admin → Fotos.'
-from people where slug = 'thiago-nigro'
-  and not exists (select 1 from quotes where text = 'Alguns influenciam os outros a fumarem maconha o dia inteiro e xingam uns aos outros');
-
 -- felipe-castanhari
 insert into quotes (person_id, text, language, said_on, context, source_type, source_url, source_timestamp, difficulty, status, review_note)
 select id, 'Quando descobrirem quem é de verdade, acabou tudo isso', 'pt', '2022-10-11', 'No podcast Groselha Talk, sobre a influenciadora Gkay. Chamou-a de ''insuportável, insuportável'' e disse que não admite ''quem maltrata pessoas que trabalham com ela''.', 'entrevista', 'https://www.correiobraziliense.com.br/diversao-e-arte/2022/10/5043562-felipe-castanhari-detona-gkay-nao-admito-quem-maltrata-as-pessoas.html', null, 3, 'draft', 'Fonte: Correio Braziliense · Por que: Youtuber famoso ameaçando expor a rainha da Farofa · Obs.: Texto conferido na matéria. Data da publicação.'
 from people where slug = 'felipe-castanhari'
   and not exists (select 1 from quotes where text = 'Quando descobrirem quem é de verdade, acabou tudo isso');
-
--- mitico
-insert into quotes (person_id, text, language, said_on, context, source_type, source_url, source_timestamp, difficulty, status, review_note)
-select id, 'Fútil é o c*ralho, eu elogiei o boy que você estava', 'pt', '2024-06-26', 'Lembrando a entrevista em que Anitta o chamou de ''fútil'' no Podpah, depois de ele elogiar o namorado dela. Disse que na hora ficou quieto, mas que hoje responderia assim.', 'entrevista', 'https://www.metropoles.com/celebridades/mitico-revela-por-que-foi-chamado-de-futil-por-anitta-e-detona-cantora', null, 2, 'draft', 'Fonte: Metrópoles · Por que: Resposta atrasada e malcriada para a maior cantora do país · Obs.: Texto conferido na matéria, com o palavrão censurado como no original. Era o que ele diria hoje, não o que disse a ela. Pessoa nova: aprove a foto em /admin → Fotos.'
-from people where slug = 'mitico'
-  and not exists (select 1 from quotes where text = 'Fútil é o c*ralho, eu elogiei o boy que você estava');
 
 -- igao
 insert into quotes (person_id, text, language, said_on, context, source_type, source_url, source_timestamp, difficulty, status, review_note)
@@ -145,11 +130,5 @@ insert into quotes (person_id, text, language, said_on, context, source_type, so
 select id, 'A mulher vota estatisticamente muito mal, principalmente mulheres solteiras.', 'pt', '2026-06-25', 'No programa semanal em vídeo, criticando Michelle Bolsonaro e o PL Mulher porque Flávio Bolsonaro ia mal nas pesquisas entre as eleitoras. Completou: ''Mulheres casadas, em geral, tendem a acompanhar o voto do marido.''', 'video', 'https://www.metropoles.com/brasil/paulo-figueiredo-volta-a-criticar-michelle-e-diz-mulher-vota-mal', null, 2, 'draft', 'Fonte: Metrópoles · Por que: Ataque ao voto feminino em ano de eleição · Obs.: Texto conferido na matéria. Data do vídeo. Pessoa nova: aprove a foto em /admin → Fotos.'
 from people where slug = 'paulo-figueiredo'
   and not exists (select 1 from quotes where text = 'A mulher vota estatisticamente muito mal, principalmente mulheres solteiras.');
-
--- nath-financas
-insert into quotes (person_id, text, language, said_on, context, source_type, source_url, source_timestamp, difficulty, status, review_note)
-select id, 'Não adianta tentar usar minha marca registrada e atrapalhar meu corre', 'pt', '2024-01-16', 'Em vídeo contra Nathalia Arcuri, do Me Poupe!, cuja empresa pediu oposição ao registro da marca Nath Play no INPI. Abriu com: ''Não adianta usar Nath Finanças pra vender seus cursos.'' Arcuri disse que foi um mal-entendido e retirou o pedido.', 'video', 'https://www.correiobraziliense.com.br/diversao-e-arte/2024/01/6789011-nathalia-x-nath-entenda-treta-entre-influenciadoras-de-financas.html', null, 3, 'draft', 'Fonte: Correio Braziliense · Por que: Treta pública entre as duas maiores youtubers de finanças · Obs.: Texto conferido na matéria. Pessoa nova: aprove a foto em /admin → Fotos.'
-from people where slug = 'nath-financas'
-  and not exists (select 1 from quotes where text = 'Não adianta tentar usar minha marca registrada e atrapalhar meu corre');
 
 commit;
