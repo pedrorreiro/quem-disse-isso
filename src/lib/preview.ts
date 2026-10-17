@@ -20,7 +20,7 @@ export type QuotePublic = {
   said_on: string | null;
   context: string | null;
   source_type: string | null;
-  source_url: string;
+  source_url: string | null;
   source_timestamp: string | null;
   archive_url: string | null;
   person: {

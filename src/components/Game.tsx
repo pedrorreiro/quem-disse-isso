@@ -596,15 +596,17 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
                 <div className="flex gap-2">
                   {reveal.quote && reveal.quote_id ? (
                     <>
-                      <a
-                        href={reveal.quote.source_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`${btnGhost} inline-flex items-center gap-2 px-4 text-sm`}
-                      >
-                        <ExternalLink className="size-4" aria-hidden />
-                        Fonte{reveal.quote.source_timestamp ? ` ${reveal.quote.source_timestamp}` : ""}
-                      </a>
+                      {reveal.quote.source_url && (
+                        <a
+                          href={reveal.quote.source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`${btnGhost} inline-flex items-center gap-2 px-4 text-sm`}
+                        >
+                          <ExternalLink className="size-4" aria-hidden />
+                          Fonte{reveal.quote.source_timestamp ? ` ${reveal.quote.source_timestamp}` : ""}
+                        </a>
+                      )}
                       <ShareButton
                         compact
                         prefetchDelay={1500}

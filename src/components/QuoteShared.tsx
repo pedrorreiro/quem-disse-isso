@@ -65,19 +65,24 @@ export default function QuoteShared({ quote }: { quote: QuotePublic | null }) {
           Adivinhar outras frases
         </Link>
         <div className="grid grid-cols-2 gap-3">
-          <Link href="/diario" className={`${btnGhost} inline-flex items-center justify-center gap-2 whitespace-nowrap px-3 text-sm md:text-base`}>
+          <Link
+            href="/diario"
+            className={`${btnGhost} ${quote.source_url ? "" : "col-span-2"} inline-flex items-center justify-center gap-2 whitespace-nowrap px-3 text-sm md:text-base`}
+          >
             <CalendarDays className="size-4" aria-hidden />
             Desafio do dia
           </Link>
-          <a
-            href={quote.source_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${btnGhost} inline-flex items-center justify-center gap-2 whitespace-nowrap px-3 text-sm md:text-base`}
-          >
-            <ExternalLink className="size-4" aria-hidden />
-            Fonte{quote.source_timestamp ? ` ${quote.source_timestamp}` : ""}
-          </a>
+          {quote.source_url && (
+            <a
+              href={quote.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${btnGhost} inline-flex items-center justify-center gap-2 whitespace-nowrap px-3 text-sm md:text-base`}
+            >
+              <ExternalLink className="size-4" aria-hidden />
+              Fonte{quote.source_timestamp ? ` ${quote.source_timestamp}` : ""}
+            </a>
+          )}
         </div>
         <ShareButton
           label="Compartilhar"

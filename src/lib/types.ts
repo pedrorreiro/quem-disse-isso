@@ -57,7 +57,8 @@ export type Reveal = {
     said_on: string | null;
     context: string | null;
     source_type: string | null;
-    source_url: string;
+    /** Nulo em Reality Show, que não mostra fonte. */
+    source_url: string | null;
     source_timestamp: string | null;
     archive_url: string | null;
   };
