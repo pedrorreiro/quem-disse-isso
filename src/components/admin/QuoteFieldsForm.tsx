@@ -2,6 +2,7 @@
 
 import { SOURCE_TYPES, type Person, type QuoteFields } from "@/lib/admin";
 import { categoryLabel } from "@/lib/share";
+import { isTrustedSource } from "@/lib/sources";
 import { ExternalLink, Field, input } from "./ui";
 
 type Props = {
@@ -41,7 +42,14 @@ export default function QuoteFieldsForm({ value, onChange, people, showAuthor = 
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
-        <Field label="Fonte (URL)">
+        <Field
+          label="Fonte (URL)"
+          hint={
+            value.source_url && !isTrustedSource(value.source_url)
+              ? "⚠ Site pouco conhecido. Prefira g1, O Globo, Folha, UOL, Estadão, CNN, BBC…"
+              : undefined
+          }
+        >
           <input
             className={input}
             type="url"
