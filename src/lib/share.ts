@@ -90,6 +90,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
   cinema: "Cinema",
   esportes: "Esportes",
   gringos: "Celebridades",
+  reality: "Reality Show",
 };
 
 export const categoryLabel = (c: string) => CATEGORY_LABELS[c] ?? c.charAt(0).toUpperCase() + c.slice(1);

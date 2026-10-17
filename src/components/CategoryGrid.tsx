@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import {
   ArrowLeft,
+  Cctv,
   Check,
   Clapperboard,
   Landmark,
@@ -33,6 +34,7 @@ const ICON: Record<string, LucideIcon> = {
   cinema: Clapperboard,
   esportes: Medal,
   gringos: Star,
+  reality: Cctv,
 };
 
 // cores das capas, em rodízio; a primeira (lime) fica para "Tudo misturado"
