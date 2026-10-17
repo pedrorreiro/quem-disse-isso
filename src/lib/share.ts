@@ -65,6 +65,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
   musica: "Música",
   tv: "TV e Novela",
   internet: "Internet",
+  youtubers: "Youtubers",
   politica: "Política",
   cinema: "Cinema",
   esportes: "Esportes",
