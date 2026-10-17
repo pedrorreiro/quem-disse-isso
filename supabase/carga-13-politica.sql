@@ -51,7 +51,7 @@ from people where slug = 'ulysses-guimaraes'
   and not exists (select 1 from quotes where text = 'Temos ódio à ditadura. Ódio e nojo.');
 -- donald-trump
 insert into quotes (person_id, text, language, said_on, context, source_type, source_url, source_timestamp, difficulty, kind, status, review_note)
-select id, 'Você está demitido!', 'pt', null, 'O bordão de Trump ao eliminar participantes do reality "O Aprendiz", que ele comandou de 2004 a 2015. No original, "Youre fired!".', 'video', 'https://exame.com/carreira/de-magnata-a-presidente-dos-eua-a-trajetoria-de-trump-comecou-no-estado-decisivo-de-sua-reeleicao/', null, 1, 'iconica', 'draft', 'Fonte: Exame · Por que: Bordão de reality que virou marca'
+select id, 'Você está demitido!', 'pt', null, 'O bordão de Trump ao eliminar participantes do reality "O Aprendiz", que ele comandou de 2004 a 2015. No original, "You''re fired!".', 'video', 'https://exame.com/carreira/de-magnata-a-presidente-dos-eua-a-trajetoria-de-trump-comecou-no-estado-decisivo-de-sua-reeleicao/', null, 1, 'iconica', 'draft', 'Fonte: Exame · Por que: Bordão de reality que virou marca'
 from people where slug = 'donald-trump'
   and not exists (select 1 from quotes where text = 'Você está demitido!');
 -- michel-temer
