@@ -7,7 +7,6 @@ const FNS: Record<string, "session" | "user" | "public"> = {
   start_challenge: "session",
   next_round: "session",
   answer_round: "session",
-  use_joker: "session",
   create_challenge: "session",
   get_challenge: "public",
   photo_credits: "public",
