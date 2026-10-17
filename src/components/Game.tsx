@@ -333,7 +333,7 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
   }
 
   if (phase === "finished" && summary) {
-    return <Results summary={summary} onReplay={() => void begin(true)} />;
+    return <Results summary={summary} category={category} onReplay={() => void begin(true)} />;
   }
 
   if (!round) return null;
@@ -630,22 +630,11 @@ export default function Game({ mode, category, quoteId, challengeId }: Props) {
                     )}
                   </button>
                 </div>
-                {(reveal.person.image_credit || reveal.quote?.archive_url) && (
+                {reveal.quote?.archive_url && (
                   <p className="text-center text-[11px] text-white/35">
-                    {reveal.person.image_credit && (
-                      <>
-                        Foto: {reveal.person.image_credit}
-                        {reveal.person.image_license && ` · ${reveal.person.image_license}`}
-                      </>
-                    )}
-                    {reveal.quote?.archive_url && (
-                      <>
-                        {reveal.person.image_credit && " · "}
-                        <a href={reveal.quote.archive_url} target="_blank" rel="noopener noreferrer" className="underline">
-                          Fonte arquivada
-                        </a>
-                      </>
-                    )}
+                    <a href={reveal.quote.archive_url} target="_blank" rel="noopener noreferrer" className="underline">
+                      Fonte arquivada
+                    </a>
                   </p>
                 )}
               </div>

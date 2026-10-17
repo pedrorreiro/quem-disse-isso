@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Flame, Swords } from "lucide-react";
+import { Flame, PartyPopper, Swords } from "lucide-react";
 import ShareButton from "./ShareButton";
 import ResultTiles from "./ResultTiles";
 import ChallengeSheet from "./ChallengeSheet";
 import { Confetti, CountUp } from "./fx";
-import { createChallenge, getChallenge } from "@/lib/api";
-import { resultCode } from "@/lib/share";
+import { createChallenge, getChallenge, myProgress } from "@/lib/api";
+import { categoryLabel, resultCode } from "@/lib/share";
 import type { Challenge, Summary } from "@/lib/types";
 
 const btnPrimary = "btn-pop bg-lime text-ink text-lg";
@@ -58,12 +58,62 @@ function Versus({ summary, rival }: { summary: Summary; rival: Challenge }) {
   );
 }
 
-export default function Results({ summary, onReplay }: { summary: Summary; onReplay?: () => void }) {
+/** Quantas frases da categoria (ou do jogo todo) o jogador já descobriu; avisa quando acabaram. */
+function Discovered({ seen, total, category }: { seen: number; total: number; category?: string }) {
+  const where = category ? ` de ${categoryLabel(category)}` : "";
+  if (seen >= total) {
+    return (
+      <motion.div {...pop(0.7)} className="flex items-start gap-3 rounded-3xl bg-grape/40 p-4 ring-1 ring-white/10 backdrop-blur md:mx-auto md:w-full md:max-w-md">
+        <PartyPopper className="mt-0.5 size-6 shrink-0 text-lime" aria-hidden />
+        <p className="text-sm">
+          <span className="block font-display font-black">
+            Você já descobriu todas as {total} frases{where}!
+          </span>
+          <span className="text-white/70">
+            Frases novas chegam toda semana. {category ? "Enquanto isso, tente outra categoria." : "Volte logo para ver as próximas."}
+          </span>
+        </p>
+      </motion.div>
+    );
+  }
+  return (
+    <motion.div {...pop(0.7)} className="flex items-center gap-3 text-sm md:mx-auto md:w-full md:max-w-md">
+      <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10" aria-hidden>
+        <span className="block h-full rounded-full bg-lime" style={{ width: `${(100 * seen) / total}%` }} />
+      </span>
+      <span className="font-bold text-white/70">
+        {seen}/{total} frases{where} descobertas
+      </span>
+    </motion.div>
+  );
+}
+
+export default function Results({
+  summary,
+  category,
+  onReplay,
+}: {
+  summary: Summary;
+  category?: string;
+  onReplay?: () => void;
+}) {
   const isDaily = summary.mode === "daily";
   const canChallenge = summary.mode !== "shared";
   const [challengeId, setChallengeId] = useState<string | null>(null);
   const [sheet, setSheet] = useState(false);
   const [rival, setRival] = useState<Challenge | null>(null);
+  const [discovered, setDiscovered] = useState<{ seen: number; total: number } | null>(null);
+
+  useEffect(() => {
+    if (summary.mode !== "solo") return;
+    myProgress()
+      .then((list) => {
+        const mine = list.filter((p) => !category || p.category === category);
+        const total = mine.reduce((n, p) => n + p.total, 0);
+        if (total > 0) setDiscovered({ seen: mine.reduce((n, p) => n + p.seen, 0), total });
+      })
+      .catch(() => {});
+  }, [summary.mode, summary.session_id, category]);
 
   // o desafio já fica criado ao terminar, para o link sair na hora do toque
   useEffect(() => {
@@ -126,6 +176,8 @@ export default function Results({ summary, onReplay }: { summary: Summary; onRep
           </motion.div>
         </dl>
       )}
+
+      {discovered && <Discovered {...discovered} category={category} />}
 
       <motion.div {...pop(0.75)} className="mt-auto flex flex-col gap-3 md:mx-auto md:w-full md:max-w-md">
         {canChallenge && (

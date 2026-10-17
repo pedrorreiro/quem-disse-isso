@@ -1,13 +1,15 @@
 import { accessToken, supabaseAs } from "@/lib/server/supabase";
 
 // Só estas funções passam pelo proxy. "session": cria sessão anônima se não houver;
-// "user": exige sessão já existente (admin); "public": roda sem sessão.
-const FNS: Record<string, "session" | "user" | "public"> = {
+// "user": exige sessão já existente (admin); "optional": usa a sessão se houver, sem criar;
+// "public": roda sem sessão.
+const FNS: Record<string, "session" | "user" | "optional" | "public"> = {
   start_game: "session",
   start_challenge: "session",
   next_round: "session",
   answer_round: "session",
   create_challenge: "session",
+  my_progress: "optional",
   get_challenge: "public",
   photo_credits: "public",
   is_admin: "user",

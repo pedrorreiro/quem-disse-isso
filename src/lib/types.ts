@@ -81,3 +81,6 @@ export type Challenge = {
 
 /** Categoria na tela de escolha: quantos famosos tem e algumas fotos para a capa. */
 export type CategoryInfo = { id: string; people: number; faces: string[] };
+
+/** Frases jogáveis de uma categoria e quantas o jogador já respondeu. */
+export type CategoryProgress = { category: string; total: number; seen: number };

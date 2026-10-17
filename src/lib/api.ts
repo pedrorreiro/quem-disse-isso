@@ -1,4 +1,4 @@
-import type { CategoryInfo, Challenge, GameMode, Reveal, Round, Summary } from "./types";
+import type { CategoryInfo, CategoryProgress, Challenge, GameMode, Reveal, Round, Summary } from "./types";
 
 /** Tudo passa pelo servidor do Next (/api/*): o navegador não fala com o Supabase. */
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
@@ -54,3 +54,6 @@ export function friendlyError(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e);
   return ERRORS[msg] ?? msg;
 }
+
+/** Quantas frases de cada categoria o jogador já respondeu (sem sessão, tudo zero). */
+export const myProgress = () => rpc<CategoryProgress[]>("my_progress");

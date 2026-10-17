@@ -89,20 +89,11 @@ export default function QuoteShared({ quote }: { quote: QuotePublic | null }) {
             url: `${window.location.origin}/q/${quote.id}`,
           })}
         />
-        {(person.image_credit || quote.archive_url) && (
+        {quote.archive_url && (
           <p className="text-center text-[11px] text-white/35">
-            {person.image_credit && (
-              <>
-                Foto: {person.image_credit}
-                {person.image_license && ` · ${person.image_license}`}
-              </>
-            )}
-            {person.image_credit && quote.archive_url && " · "}
-            {quote.archive_url && (
-              <a href={quote.archive_url} target="_blank" rel="noopener noreferrer" className="underline">
-                cópia arquivada
-              </a>
-            )}
+            <a href={quote.archive_url} target="_blank" rel="noopener noreferrer" className="underline">
+              cópia arquivada
+            </a>
           </p>
         )}
       </motion.div>

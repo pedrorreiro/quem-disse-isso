@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import {
   ArrowLeft,
+  Check,
   Clapperboard,
   Landmark,
   Medal,
@@ -18,9 +19,9 @@ import {
   Tv,
   type LucideIcon,
 } from "lucide-react";
-import { listCategories } from "@/lib/api";
+import { listCategories, myProgress } from "@/lib/api";
 import { categoryLabel } from "@/lib/share";
-import type { CategoryInfo } from "@/lib/types";
+import type { CategoryInfo, CategoryProgress } from "@/lib/types";
 
 const ICON: Record<string, LucideIcon> = {
   futebol: Trophy,
@@ -46,6 +47,7 @@ function Tile({
   color,
   index,
   wide,
+  progress,
 }: {
   href: string;
   icon: LucideIcon;
@@ -55,7 +57,9 @@ function Tile({
   color: string;
   index: number;
   wide?: boolean;
+  progress?: { seen: number; total: number };
 }) {
+  const done = !!progress && progress.total > 0 && progress.seen >= progress.total;
   return (
     <motion.div
       initial={{ opacity: 0, y: 24, scale: 0.94 }}
@@ -73,6 +77,27 @@ function Tile({
         <span>
           <span className="block font-display text-xl font-black leading-tight md:text-2xl">{title}</span>
           <span className="block text-xs font-semibold opacity-70">{subtitle}</span>
+          {progress && progress.total > 0 && (
+            <span className="mt-2 flex items-center gap-2 text-xs font-bold">
+              <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/20" aria-hidden>
+                <span
+                  className="block h-full rounded-full bg-current"
+                  style={{ width: `${Math.min(100, (100 * progress.seen) / progress.total)}%` }}
+                />
+              </span>
+              {done ? (
+                <span className="flex items-center gap-0.5">
+                  <Check className="size-3.5" strokeWidth={3} aria-hidden />
+                  Completa
+                </span>
+              ) : (
+                <span>
+                  {progress.seen}/{progress.total}
+                  <span className="sr-only"> frases descobertas</span>
+                </span>
+              )}
+            </span>
+          )}
         </span>
         {faces.length > 0 && (
           <span className="absolute right-3 top-3 flex -space-x-3" aria-hidden>
@@ -91,12 +116,18 @@ function Tile({
 export default function CategoryGrid() {
   const [categories, setCategories] = useState<CategoryInfo[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [progress, setProgress] = useState<Map<string, CategoryProgress>>(new Map());
 
   useEffect(() => {
     listCategories()
       .then(setCategories)
       .catch(() => setFailed(true));
+    myProgress()
+      .then((list) => setProgress(new Map(list.map((p) => [p.category, p]))))
+      .catch(() => {});
   }, []);
+
+  const all = [...progress.values()].reduce((a, p) => ({ seen: a.seen + p.seen, total: a.total + p.total }), { seen: 0, total: 0 });
 
   const total = categories?.reduce((n, c) => n + c.people, 0) ?? 0;
   const mixFaces = categories?.flatMap((c) => c.faces.slice(0, 1)).slice(0, 4) ?? [];
@@ -104,7 +135,7 @@ export default function CategoryGrid() {
   return (
     <div className="flex flex-1 flex-col gap-6 py-6 md:py-10">
       <header className="flex items-center gap-3">
-        <Link href="/" className="btn-pop grid size-11 shrink-0 place-items-center rounded-2xl bg-white/10 backdrop-blur" aria-label="Voltar ao início">
+        <Link href="/" className="btn-pop grid size-11 shrink-0 place-items-center rounded-2xl p-0! bg-white/10 backdrop-blur" aria-label="Voltar ao início">
           <ArrowLeft className="size-5" aria-hidden />
         </Link>
         <div>
@@ -134,6 +165,7 @@ export default function CategoryGrid() {
             color="bg-lime text-ink"
             index={0}
             wide
+            progress={all.total > 0 ? all : undefined}
           />
           {categories.map((c, i) => (
             <Tile
@@ -145,6 +177,7 @@ export default function CategoryGrid() {
               faces={c.faces.slice(0, 3)}
               color={TILE[i % TILE.length]}
               index={i + 1}
+              progress={progress.get(c.id)}
             />
           ))}
         </div>
