@@ -16,7 +16,7 @@ insert into people (name, slug, category, area, gender, country, bio_short) valu
   ('Joelma', 'joelma', 'musica', 'musica', 'f', 'BR', 'Cantora paraense, ex-vocalista da banda Calypso'),
   ('Ed Motta', 'ed-motta', 'musica', 'musica', 'm', 'BR', 'Cantor e compositor de soul e jazz, sobrinho de Tim Maia'),
   ('Milton Nascimento', 'milton-nascimento', 'musica', 'musica', 'm', 'BR', 'Cantor e compositor mineiro, do Clube da Esquina'),
-  ('Mano Brown', 'mano-brown', 'musica', 'musica', 'm', 'BR', 'Rapper, líder dos Racionais MCs'),
+  ('Mano Brown', 'mano-brown', 'musica', 'musica', 'm', 'BR', 'Rapper, líder dos Racionais MC''s'),
   ('Claudia Leitte', 'claudia-leitte', 'musica', 'musica', 'f', 'BR', 'Cantora de axé, ex-vocalista do Babado Novo'),
   ('Thomas Machado', 'thomas-restart', 'musica', 'musica', 'm', 'BR', 'Baterista da banda Restart'),
   ('Leonardo', 'leonardo', 'musica', 'musica', 'm', 'BR', 'Cantor sertanejo, ex-dupla com Leandro'),
@@ -42,9 +42,9 @@ from people where slug = 'zeze-di-camargo'
   and not exists (select 1 from quotes where text = 'Se puderem, não precisa passar meu especial, não quero participar disso');
 -- luisa-sonza
 insert into quotes (person_id, text, language, said_on, context, source_type, source_url, source_timestamp, difficulty, kind, status, review_note)
-select id, 'Pega um copo dágua pra mim? Você não trabalha aqui?', 'pt', '2018-09-01', 'Segundo a advogada Isabel Macedo, que é negra, foi o que a cantora disse a ela em Fernando de Noronha, confundindo-a com uma funcionária da pousada. A advogada processou por injúria racial, houve acordo, e a cantora admitiu: "Realmente, eu cometi um ato racista".', 'materia', 'https://www.metropoles.com/brasil/luisa-sonza-e-acusada-de-racismo-por-advogada-negra', null, 2, 'polemica', 'draft', 'Fonte: Metrópoles · Por que: Caso de racismo que virou processo · Obs.: Texto pelo relato da advogada (trecho da busca). Data aproximada (setembro de 2018). Admissão no Terra. Pessoa nova: aprove a foto em /admin → Fotos.'
+select id, 'Pega um copo d''água pra mim? Você não trabalha aqui?', 'pt', '2018-09-01', 'Segundo a advogada Isabel Macedo, que é negra, foi o que a cantora disse a ela em Fernando de Noronha, confundindo-a com uma funcionária da pousada. A advogada processou por injúria racial, houve acordo, e a cantora admitiu: "Realmente, eu cometi um ato racista".', 'materia', 'https://www.metropoles.com/brasil/luisa-sonza-e-acusada-de-racismo-por-advogada-negra', null, 2, 'polemica', 'draft', 'Fonte: Metrópoles · Por que: Caso de racismo que virou processo · Obs.: Texto pelo relato da advogada (trecho da busca). Data aproximada (setembro de 2018). Admissão no Terra. Pessoa nova: aprove a foto em /admin → Fotos.'
 from people where slug = 'luisa-sonza'
-  and not exists (select 1 from quotes where text = 'Pega um copo dágua pra mim? Você não trabalha aqui?');
+  and not exists (select 1 from quotes where text = 'Pega um copo d''água pra mim? Você não trabalha aqui?');
 -- joelma
 insert into quotes (person_id, text, language, said_on, context, source_type, source_url, source_timestamp, difficulty, kind, status, review_note)
 select id, 'É como um drogado tentando se recuperar', 'pt', '2013-03-30', 'Em entrevista à revista Época, comparando gays a dependentes químicos. Também disse que, se tivesse um filho gay, lutaria até a morte para convertê-lo. Depois negou a comparação.', 'entrevista', 'https://www.correiobraziliense.com.br/app/noticia/brasil/2013/03/31/interna-brasil,357664/joelma-do-calypso-compara-gays-a-drogados-e-causa-polemica-na-internet.shtml', null, 2, 'polemica', 'draft', 'Fonte: Correio Braziliense · Por que: Comparou gays a drogados · Obs.: Texto pelo trecho da busca; confira. Pessoa nova: aprove a foto em /admin → Fotos.'

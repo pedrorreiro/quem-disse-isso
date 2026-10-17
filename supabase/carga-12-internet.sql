@@ -26,9 +26,9 @@ from people where slug = 'ines-brasil'
   and not exists (select 1 from quotes where text = 'Segura esse forninho');
 -- narcisa-tamborindeguy
 insert into quotes (person_id, text, language, said_on, context, source_type, source_url, source_timestamp, difficulty, kind, status, review_note)
-select id, 'Dont touch, its art', 'pt', null, 'Um dos bordões de Narcisa que viralizam nas redes. Virou até nome de batom da linha de maquiagem dela.', 'video', 'https://www.cnnbrasil.com.br/lifestyle/ai-que-loucura-narcisa-ganha-batons-inspirados-em-bordoes-classicos/', null, 2, 'iconica', 'draft', 'Fonte: CNN Brasil · Por que: Bordão clássico'
+select id, 'Don''t touch, it''s art', 'pt', null, 'Um dos bordões de Narcisa que viralizam nas redes. Virou até nome de batom da linha de maquiagem dela.', 'video', 'https://www.cnnbrasil.com.br/lifestyle/ai-que-loucura-narcisa-ganha-batons-inspirados-em-bordoes-classicos/', null, 2, 'iconica', 'draft', 'Fonte: CNN Brasil · Por que: Bordão clássico'
 from people where slug = 'narcisa-tamborindeguy'
-  and not exists (select 1 from quotes where text = 'Dont touch, its art');
+  and not exists (select 1 from quotes where text = 'Don''t touch, it''s art');
 insert into quotes (person_id, text, language, said_on, context, source_type, source_url, source_timestamp, difficulty, kind, status, review_note)
 select id, 'Ai, que vista!', 'pt', null, 'Usado por Narcisa para celebrar a mudança para um apartamento de frente para a praia, em Ipanema.', 'video', 'https://www.metropoles.com/vida-e-estilo/narcisa-deixa-copacabana-e-se-muda-para-imovel-de-r-48-milhoes', null, 3, 'iconica', 'draft', 'Fonte: Metrópoles · Por que: Bordão da socialite'
 from people where slug = 'narcisa-tamborindeguy'
