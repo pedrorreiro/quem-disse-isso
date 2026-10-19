@@ -104,8 +104,8 @@ export default async function FamosoPage({ params }: PageProps<"/famoso/[slug]">
           Jogar: {categoryLabel(person.category)}
         </Link>
 
-        {/* uma seção por tipo, icônicas primeiro (o padrão do app) */}
-        {KINDS.map((kind) => {
+        {/* uma seção por tipo, polêmicas primeiro */}
+        {(["polemica", "iconica"] as const).map((kind) => {
           const quotes = person.quotes.filter((q) => q.kind === kind);
           if (quotes.length === 0) return null;
           return (
