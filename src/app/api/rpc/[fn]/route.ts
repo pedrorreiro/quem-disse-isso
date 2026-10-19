@@ -14,6 +14,7 @@ const FNS: Record<string, "session" | "user" | "optional" | "public"> = {
   photo_credits: "public",
   is_admin: "user",
   admin_overview: "user",
+  admin_stats: "user",
   admin_people: "user",
   admin_quote_queue: "user",
   admin_quotes: "user",

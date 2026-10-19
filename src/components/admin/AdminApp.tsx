@@ -8,9 +8,10 @@ import NewQuote from "./NewQuote";
 import PeopleAdmin from "./PeopleAdmin";
 import QuoteReview from "./QuoteReview";
 import QuotesAdmin from "./QuotesAdmin";
+import StatsAdmin from "./StatsAdmin";
 import { Field, btnGhost, btnPrimary, input } from "./ui";
 
-type Tab = "quotes" | "all" | "photos" | "people" | "new";
+type Tab = "quotes" | "all" | "photos" | "people" | "new" | "stats";
 type Auth = { state: "loading" } | { state: "login" } | { state: "denied"; userId: string } | { state: "ok" };
 
 export default function AdminApp() {
@@ -147,6 +148,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
     { id: "photos", label: "Fotos", badge: overview?.photos_pending },
     { id: "people", label: "Pessoas" },
     { id: "new", label: "Nova frase" },
+    { id: "stats", label: "Estatísticas" },
   ];
 
   return (
@@ -197,6 +199,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
       {tab === "photos" && <PeopleAdmin key="photos" view="photos" onChanged={refresh} />}
       {tab === "people" && <PeopleAdmin key="people" view="people" onChanged={refresh} />}
       {tab === "new" && <NewQuote onChanged={refresh} />}
+      {tab === "stats" && <StatsAdmin />}
     </div>
   );
 }

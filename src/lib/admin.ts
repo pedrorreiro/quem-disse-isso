@@ -78,10 +78,58 @@ export type Overview = {
   playable: number;
 };
 
+type HitCount = { answers: number; hits: number };
+
+/** Estatísticas de acertos e erros do painel. */
+export type Stats = {
+  totals: HitCount & {
+    players: number;
+    timeouts: number;
+    avg_secs: number | null;
+    players_today: number;
+    answers_today: number;
+    games: number;
+    finished: number;
+  };
+  by_day: (HitCount & { day: string; players: number })[];
+  by_category: (HitCount & { category: string })[];
+  by_kind: (HitCount & { kind: "iconica" | "polemica" })[];
+  by_mode: (HitCount & { mode: string })[];
+  people: (HitCount & {
+    id: string;
+    name: string;
+    category: string;
+    image_url: string | null;
+    quotes: number;
+    timeouts: number;
+    avg_secs: number | null;
+    /** vezes que a galera chutou esta pessoa numa frase de outra */
+    decoy: number;
+    confused_with: { name: string; count: number }[] | null;
+  })[];
+  confusions: { said_by: string; guessed: string; count: number }[];
+  /** frases com 3+ respostas */
+  quotes: (HitCount & { id: string; text: string; person: string; kind: "iconica" | "polemica" })[];
+  players: (HitCount & {
+    id: string;
+    is_anonymous: boolean;
+    is_admin: boolean;
+    timeouts: number;
+    avg_secs: number | null;
+    games: number;
+    best_score: number | null;
+    best_streak: number | null;
+    first_seen: string;
+    last_seen: string;
+    favorite_category: string | null;
+  })[];
+};
+
 export type ReviewAction = "approve" | "reject" | "save" | "reopen";
 
 export const isAdmin = () => rpc<boolean>("is_admin");
 export const adminOverview = () => rpc<Overview>("admin_overview");
+export const adminStats = (days: number | null) => rpc<Stats>("admin_stats", { p_days: days });
 export const adminPeople = () => rpc<Person[]>("admin_people");
 export const adminQuoteQueue = () => rpc<DraftQuote[]>("admin_quote_queue");
 export const adminQuotes = () => rpc<AdminQuote[]>("admin_quotes");
