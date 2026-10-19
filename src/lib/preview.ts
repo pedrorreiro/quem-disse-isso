@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { supabaseAs } from "./server/supabase";
 import type { Challenge } from "./types";
 
@@ -33,13 +34,14 @@ export type QuotePublic = {
 };
 
 /** Frase compartilhada, já revelada: texto, quem disse e fonte. Só frases que estão no jogo. */
-export async function getQuotePublic(id: string): Promise<QuotePublic | null> {
+// cache: metadados, JSON-LD e página pedem a mesma frase na mesma requisição
+export const getQuotePublic = cache(async (id: string): Promise<QuotePublic | null> => {
   if (!UUID.test(id)) return null;
   return publicRpc<QuotePublic>("get_quote_public", { p_quote_id: id });
-}
+});
 
 /** Nome e resultado de quem desafiou (nunca as frases). */
-export async function getChallengePublic(id: string): Promise<Challenge | null> {
+export const getChallengePublic = cache(async (id: string): Promise<Challenge | null> => {
   if (!UUID.test(id)) return null;
   return publicRpc<Challenge>("get_challenge", { p_challenge_id: id });
-}
+});

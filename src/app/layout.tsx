@@ -3,7 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Bricolage_Grotesque, Geist } from "next/font/google";
 import "./globals.css";
-import { siteUrl } from "@/lib/site";
+import { ogDefault, siteUrl } from "@/lib/site";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,11 +16,28 @@ const bricolage = Bricolage_Grotesque({
   axes: ["wdth", "opsz"],
 });
 
+const description =
+  "Jogo de adivinhar quem disse a frase: frases icônicas e polêmicas de famosos, políticos, jogadores, BBBs e influenciadores. Grátis, sem cadastro, e toda frase tem fonte.";
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Quem Disse Isso?",
-  description: "Aparece uma frase. Você adivinha quem foi que disse. Toda frase tem fonte.",
-  openGraph: { title: "Quem Disse Isso?", siteName: "Quem Disse Isso?", type: "website", locale: "pt_BR" },
+  title: { default: "Quem Disse Isso? — Jogo de adivinhar quem disse a frase", template: "%s | Quem Disse Isso?" },
+  description,
+  applicationName: "Quem Disse Isso?",
+  keywords: [
+    "quem disse isso",
+    "quem disse",
+    "jogo de frases",
+    "adivinhe quem disse",
+    "quiz de famosos",
+    "frases polêmicas",
+    "frases icônicas",
+    "frases de famosos",
+    "quiz online",
+    "desafio do dia",
+  ],
+  openGraph: { ...ogDefault, title: "Quem Disse Isso?", description: "Aparece a frase. Você adivinha quem disse. Dá pra acertar todas?" },
+  twitter: { card: "summary_large_image" },
   verification: { google: "3BzUTrouCM6_p-XL3lc5VCy1GnPWDmr25Gm5zaIeX5w" },
 };
 

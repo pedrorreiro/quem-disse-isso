@@ -27,6 +27,9 @@ export default function QuoteShared({ quote }: { quote: QuotePublic | null }) {
 
   return (
     <div className="flex flex-1 flex-col justify-center gap-8 py-10">
+      <h1 className="sr-only">
+        Quem disse “{quote.text}”? Foi {person.name}
+      </h1>
       <motion.figure
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
@@ -44,7 +47,7 @@ export default function QuoteShared({ quote }: { quote: QuotePublic | null }) {
         <figcaption className="mt-6 flex items-center gap-4">
           {person.image_url && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={person.image_url} alt="" className="size-16 shrink-0 rounded-2xl object-cover ring-4 ring-lime md:size-20" />
+            <img src={person.image_url} alt={person.name} className="size-16 shrink-0 rounded-2xl object-cover ring-4 ring-lime md:size-20" />
           )}
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-widest text-white/50">Quem disse</p>
