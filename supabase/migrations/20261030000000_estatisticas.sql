@@ -1,5 +1,5 @@
 -- Painel: estatísticas de acertos e erros. Por famoso (quem a galera acerta, com quem confunde),
--- por jogador, por categoria, por dia e as frases mais difíceis/fáceis.
+-- por categoria, por dia e as frases mais difíceis/fáceis.
 -- p_days limita às respostas dos últimos N dias (nulo = desde sempre). Pode rodar mais de uma vez.
 
 create or replace function public.admin_stats(p_days int default null) returns jsonb
@@ -72,39 +72,21 @@ begin
                    group by 1 order by 2 desc limit 3) w
             join people cp on cp.id = w.chosen_person_id) c on true), '[]'),
     'confusions', coalesce((
-      select jsonb_agg(jsonb_build_object('said_by', sp.name, 'guessed', cp.name, 'count', w.n) order by w.n desc, sp.name)
+      select jsonb_agg(jsonb_build_object('said_by', sp.name, 'said_by_image', sp.image_url,
+                                          'guessed', cp.name, 'guessed_image', cp.image_url, 'count', w.n)
+                       order by w.n desc, sp.name)
         from (select person_id, chosen_person_id, count(*) as n from v
                where not correct and chosen_person_id is not null
-               group by 1, 2 order by 3 desc limit 15) w
+               group by 1, 2 order by 3 desc limit 12) w
         join people sp on sp.id = w.person_id
         join people cp on cp.id = w.chosen_person_id), '[]'),
     'quotes', coalesce((
-      select jsonb_agg(jsonb_build_object('id', q.id, 'text', q.text, 'person', p.name, 'kind', q.kind,
+      select jsonb_agg(jsonb_build_object('id', q.id, 'text', q.text, 'person', p.name, 'person_image', p.image_url, 'kind', q.kind,
                                           'answers', x.answers, 'hits', x.hits))
         from (select quote_id, count(*) as answers, count(*) filter (where correct) as hits
                 from v group by quote_id having count(*) >= 3) x
         join quotes q on q.id = x.quote_id
-        join people p on p.id = q.person_id), '[]'),
-    'players', coalesce((
-      select jsonb_agg(jsonb_build_object(
-               'id', x.user_id, 'is_anonymous', coalesce(u.is_anonymous, true),
-               'is_admin', exists (select 1 from admins ad where ad.user_id = x.user_id),
-               'answers', x.answers, 'hits', x.hits, 'timeouts', x.timeouts, 'avg_secs', x.avg_secs,
-               'games', g.games, 'best_score', g.best_score, 'best_streak', g.best_streak,
-               'first_seen', x.first_seen, 'last_seen', x.last_seen,
-               'favorite_category', fc.category)
-             order by x.answers desc)
-        from (select user_id, count(*) as answers, count(*) filter (where correct) as hits,
-                     count(*) filter (where timeout) as timeouts,
-                     round(avg(secs) filter (where not timeout)::numeric, 1) as avg_secs,
-                     min(answered_at) as first_seen, max(answered_at) as last_seen
-                from v group by user_id) x
-        left join auth.users u on u.id = x.user_id
-        left join lateral (
-          select count(*) as games, max(score) as best_score, max(best_streak) as best_streak
-            from game_sessions s where s.user_id = x.user_id and s.created_at >= v_since) g on true
-        left join lateral (
-          select category from v where v.user_id = x.user_id group by category order by count(*) desc limit 1) fc on true), '[]')
+        join people p on p.id = q.person_id), '[]')
   ) into v_out;
 
   return v_out;

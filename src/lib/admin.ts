@@ -107,22 +107,9 @@ export type Stats = {
     decoy: number;
     confused_with: { name: string; count: number }[] | null;
   })[];
-  confusions: { said_by: string; guessed: string; count: number }[];
+  confusions: { said_by: string; said_by_image: string | null; guessed: string; guessed_image: string | null; count: number }[];
   /** frases com 3+ respostas */
-  quotes: (HitCount & { id: string; text: string; person: string; kind: "iconica" | "polemica" })[];
-  players: (HitCount & {
-    id: string;
-    is_anonymous: boolean;
-    is_admin: boolean;
-    timeouts: number;
-    avg_secs: number | null;
-    games: number;
-    best_score: number | null;
-    best_streak: number | null;
-    first_seen: string;
-    last_seen: string;
-    favorite_category: string | null;
-  })[];
+  quotes: (HitCount & { id: string; text: string; person: string; person_image: string | null; kind: "iconica" | "polemica" })[];
 };
 
 export type ReviewAction = "approve" | "reject" | "save" | "reopen";
