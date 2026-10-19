@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Play, Quote } from "lucide-react";
 import JsonLd from "@/components/JsonLd";
-import { KIND_ADJ, KIND_LABELS, KINDS } from "@/lib/kind";
+import { KIND_ADJ, KINDS } from "@/lib/kind";
 import { getPersonPublic, type PersonPublic } from "@/lib/preview";
 import { categoryLabel, quoteDetail } from "@/lib/share";
 import { ogDefault, siteUrl } from "@/lib/site";
@@ -104,28 +104,37 @@ export default async function FamosoPage({ params }: PageProps<"/famoso/[slug]">
           Jogar: {categoryLabel(person.category)}
         </Link>
 
-        <ul className="flex flex-col gap-3">
-          {person.quotes.map((q) => {
-            const detail = quoteDetail(q.context, q.said_on);
-            return (
-              <li key={q.id}>
-                <Link
-                  href={`/q/${q.id}`}
-                  className="flex gap-3 rounded-2xl bg-white/[0.07] px-4 py-4 ring-1 ring-white/10 transition hover:bg-white/[0.12] md:backdrop-blur"
-                >
-                  <Quote className="mt-1 size-4 shrink-0 fill-current text-pink" aria-hidden />
-                  <div className="min-w-0">
-                    <p className="font-bold leading-snug text-white/90">{q.text}</p>
-                    <p className="mt-1 text-xs text-white/50">
-                      {KIND_LABELS[q.kind]}
-                      {detail ? ` · ${detail}` : ""}
-                    </p>
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        {/* uma seção por tipo, icônicas primeiro (o padrão do app) */}
+        {KINDS.map((kind) => {
+          const quotes = person.quotes.filter((q) => q.kind === kind);
+          if (quotes.length === 0) return null;
+          return (
+            <section key={kind} className="flex flex-col gap-3">
+              <h2 className="font-display text-xl font-black text-white">
+                Frases {KIND_ADJ[kind]} de {person.name}
+              </h2>
+              <ul className="flex flex-col gap-3">
+                {quotes.map((q) => {
+                  const detail = quoteDetail(q.context, q.said_on);
+                  return (
+                    <li key={q.id}>
+                      <Link
+                        href={`/q/${q.id}`}
+                        className="flex gap-3 rounded-2xl bg-white/[0.07] px-4 py-4 ring-1 ring-white/10 transition hover:bg-white/[0.12] md:backdrop-blur"
+                      >
+                        <Quote className="mt-1 size-4 shrink-0 fill-current text-pink" aria-hidden />
+                        <div className="min-w-0">
+                          <p className="font-bold leading-snug text-white/90">{q.text}</p>
+                          {detail && <p className="mt-1 text-xs text-white/50">{detail}</p>}
+                        </div>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          );
+        })}
 
         {person.related.length > 0 && (
           <section className="flex flex-col gap-3">
