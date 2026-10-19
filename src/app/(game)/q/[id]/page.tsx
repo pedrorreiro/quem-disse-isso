@@ -10,6 +10,9 @@ export async function generateMetadata({ params }: PageProps<"/q/[id]">): Promis
   return {
     title,
     description,
+    // frase inexistente responde 200 com mensagem de erro: não deixar o Google indexar
+    alternates: quote ? { canonical: `/q/${id}` } : undefined,
+    robots: quote ? undefined : { index: false, follow: false },
     openGraph: { title, description },
     twitter: { card: "summary_large_image" },
   };

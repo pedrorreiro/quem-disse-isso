@@ -24,6 +24,7 @@ export const metadata: Metadata = {
   title: "Quem Disse Isso?",
   description: "Aparece uma frase. Você adivinha quem foi que disse. Toda frase tem fonte.",
   openGraph: { title: "Quem Disse Isso?", siteName: "Quem Disse Isso?", type: "website", locale: "pt_BR" },
+  verification: { google: "3BzUTrouCM6_p-XL3lc5VCy1GnPWDmr25Gm5zaIeX5w" },
 };
 
 export const viewport: Viewport = {
