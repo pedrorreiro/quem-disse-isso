@@ -51,7 +51,15 @@ export default function QuoteShared({ quote }: { quote: QuotePublic | null }) {
           )}
           <div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-widest text-white/50">Quem disse</p>
-            <p className="font-display text-2xl font-black leading-tight text-lime md:text-3xl">{person.name}</p>
+            <p className="font-display text-2xl font-black leading-tight text-lime md:text-3xl">
+              {person.slug ? (
+                <Link href={`/famoso/${person.slug}`} className="underline decoration-lime/40 underline-offset-4 hover:decoration-lime">
+                  {person.name}
+                </Link>
+              ) : (
+                person.name
+              )}
+            </p>
             {detail && <p className="text-sm text-white/60">{detail}</p>}
           </div>
         </figcaption>

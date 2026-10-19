@@ -25,6 +25,8 @@ export type QuotePublic = {
   source_timestamp: string | null;
   archive_url: string | null;
   person: {
+    /** Slug da página /famoso; ausente enquanto a migração paginas_famoso não foi aplicada. */
+    slug?: string;
     name: string;
     image_url: string | null;
     image_credit: string | null;
@@ -38,6 +40,36 @@ export type QuotePublic = {
 export const getQuotePublic = cache(async (id: string): Promise<QuotePublic | null> => {
   if (!UUID.test(id)) return null;
   return publicRpc<QuotePublic>("get_quote_public", { p_quote_id: id });
+});
+
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export type PersonQuote = {
+  id: string;
+  text: string;
+  said_on: string | null;
+  context: string | null;
+  kind: "iconica" | "polemica";
+  source_url: string | null;
+};
+
+export type PersonPublic = {
+  slug: string;
+  name: string;
+  category: string;
+  bio_short: string | null;
+  image_url: string | null;
+  image_credit: string | null;
+  image_license: string | null;
+  image_source_url: string | null;
+  quotes: PersonQuote[];
+  related: { slug: string; name: string }[];
+};
+
+/** Página de uma pessoa: as frases dela que estão no jogo, já reveladas. Nulo se não há nenhuma. */
+export const getPersonPublic = cache(async (slug: string): Promise<PersonPublic | null> => {
+  if (!SLUG.test(slug)) return null;
+  return publicRpc<PersonPublic>("person_quotes_public", { p_slug: slug });
 });
 
 /** Nome e resultado de quem desafiou (nunca as frases). */

@@ -11,15 +11,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const pages: MetadataRoute.Sitemap = PAGES.map((path) => ({ url: `${siteUrl}${path}`, changeFrequency: "daily" }));
 
   let quotes: { id: string; verified_at: string | null }[] = [];
+  let people: { slug: string; verified_at: string | null }[] = [];
   try {
-    const { data, error } = await supabaseAs().rpc("sitemap_quotes");
-    if (!error && data) quotes = data;
+    const db = supabaseAs();
+    const [q, p] = await Promise.all([db.rpc("sitemap_quotes"), db.rpc("sitemap_people")]);
+    if (!q.error && q.data) quotes = q.data;
+    if (!p.error && p.data) people = p.data;
   } catch {
     // sem o banco, o sitemap sai só com as páginas fixas
   }
 
   return [
     ...pages,
+    ...people.map((p) => ({
+      url: `${siteUrl}/famoso/${p.slug}`,
+      lastModified: p.verified_at ? new Date(p.verified_at) : undefined,
+    })),
     ...quotes.map((q) => ({
       url: `${siteUrl}/q/${q.id}`,
       lastModified: q.verified_at ? new Date(q.verified_at) : undefined,
