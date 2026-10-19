@@ -1,4 +1,3 @@
-import Link from "next/link";
 import Hero from "@/components/Hero";
 
 export default function Home() {
@@ -6,12 +5,7 @@ export default function Home() {
     <div className="flex flex-1 flex-col justify-center gap-10 py-10">
       <Hero />
 
-      <p className="text-center text-xs text-white/40">
-        Toda frase tem fonte. Confira no fim de cada rodada. ·{" "}
-        <Link href="/creditos" className="underline">
-          Créditos das fotos
-        </Link>
-      </p>
+      <p className="text-center text-xs text-white/40">Toda frase tem fonte. Confira no fim de cada rodada.</p>
     </div>
   );
 }
