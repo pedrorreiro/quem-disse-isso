@@ -11,7 +11,8 @@ import QuotesAdmin from "./QuotesAdmin";
 import StatsAdmin from "./StatsAdmin";
 import { Field, btnGhost, btnPrimary, input } from "./ui";
 
-type Tab = "quotes" | "all" | "photos" | "people" | "new" | "stats";
+const TABS = ["quotes", "all", "photos", "people", "new", "stats"] as const;
+type Tab = (typeof TABS)[number];
 type Auth = { state: "loading" } | { state: "login" } | { state: "denied"; userId: string } | { state: "ok" };
 
 export default function AdminApp() {
@@ -134,7 +135,17 @@ function Login({ onDone }: { onDone: () => void }) {
 }
 
 function Dashboard({ onSignOut }: { onSignOut: () => void }) {
-  const [tab, setTab] = useState<Tab>("quotes");
+  // a aba fica em ?aba= para sobreviver ao F5 (o Dashboard só monta no cliente, depois do login)
+  const [tab, setTabState] = useState<Tab>(() => {
+    const aba = new URLSearchParams(window.location.search).get("aba");
+    return TABS.find((t) => t === aba) ?? "quotes";
+  });
+  const setTab = (t: Tab) => {
+    setTabState(t);
+    const url = new URL(window.location.href);
+    url.searchParams.set("aba", t);
+    history.replaceState(null, "", url);
+  };
   const [overview, setOverview] = useState<Overview | null>(null);
 
   const refresh = useCallback(() => {
