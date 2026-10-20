@@ -55,6 +55,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         {/* modo polêmica antes do primeiro quadro, para a página não piscar com a paleta padrão */}
         <script dangerouslySetInnerHTML={{ __html: MODE_SCRIPT }} />
+        <script defer src="https://cloud.umami.is/script.js" data-website-id="59f51bde-e664-4500-addf-281f8649b27f" />
       </head>
       <body className="min-h-dvh">
         {children}
